@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { adminStatusUpdateSchema, planBinInputSchema } from "@/lib/schemas";
+import {
+  adminStatusUpdateSchema,
+  planBinInputSchema,
+  publicSupportTicketSchema,
+  supportTicketUpdateSchema,
+} from "@/lib/schemas";
 
 const futureDate = "2099-07-28";
 
@@ -47,5 +52,30 @@ describe("signup validation", () => {
         operationalStatus: "confirmed",
       }).success,
     ).toBe(true);
+  });
+
+  it("validates public support ticket details and normalises email", () => {
+    const result = publicSupportTicketSchema.safeParse({
+      name: "Oliver Jones",
+      email: "OLIVER@EXAMPLE.COM",
+      telephone: "07123 456 789",
+      subject: "Question about my bins",
+      message: "Can you help me check whether BuddyBin covers my address?",
+      company: "",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.email).toBe("oliver@example.com");
+    }
+  });
+
+  it("rejects unsupported support ticket statuses", () => {
+    expect(
+      supportTicketUpdateSchema.safeParse({
+        status: "forgotten",
+        internalNotes: "",
+      }).success,
+    ).toBe(false);
   });
 });

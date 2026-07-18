@@ -1,4 +1,5 @@
 import { Mail } from "lucide-react";
+import Link from "next/link";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteHeader } from "@/components/site/header";
 import { BRAND } from "@/lib/constants";
@@ -43,10 +44,15 @@ export default function HelpPage() {
               <h2 className="text-xl font-black">Need support?</h2>
             </div>
             <p className="mt-3 text-slate-700">
-              Customers can send support messages through the secure account
-              portal after checkout. Pre-launch enquiries can use the support
-              email configured in Resend.
+              Create a support ticket and we will review your enquiry. We aim to
+              reply by email or telephone within 24 hours.
             </p>
+            <Link
+              href="/contact"
+              className="mt-4 inline-flex font-bold text-buddy-blue hover:text-buddy-navy"
+            >
+              Contact support
+            </Link>
           </div>
         </section>
       </main>

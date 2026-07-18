@@ -26,17 +26,19 @@ export function AccountContactForm() {
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload.error || "Message could not be sent");
+        throw new Error(payload.error || "Support ticket could not be created");
       }
 
       setSubject("");
       setMessage("");
-      setStatus("Your message has been sent.");
+      setStatus(
+        `Support ticket submitted. Reference: ${payload.ticketReference || "BB-PENDING"}. We aim to reply by email or telephone within 24 hours.`,
+      );
     } catch (contactError) {
       setError(
         contactError instanceof Error
           ? contactError.message
-          : "Message could not be sent.",
+          : "Support ticket could not be created.",
       );
     } finally {
       setSubmitting(false);
@@ -72,7 +74,7 @@ export function AccountContactForm() {
       </div>
       <Button type="submit" disabled={submitting}>
         <Send aria-hidden size={18} />
-        {submitting ? "Sending..." : "Send message"}
+        {submitting ? "Submitting..." : "Submit support ticket"}
       </Button>
       {status ? (
         <p className="rounded-2xl bg-buddy-pale px-4 py-3 text-sm font-semibold text-buddy-navy">

@@ -6,7 +6,7 @@ const links = [
   ["Dashboard", "/admin"],
   ["Customers", "/admin/customers"],
   ["Pricing", "/admin/pricing"],
-  ["Messages", "/admin/messages"],
+  ["Support tickets", "/admin/messages"],
 ] as const;
 
 export function AdminShell({ children }: { children: React.ReactNode }) {

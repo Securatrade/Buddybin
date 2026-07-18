@@ -4,9 +4,22 @@ type TemplateInput = {
   name?: string;
   actionUrl?: string;
   message?: string;
+  subject?: string;
+  ticketReference?: string;
+  email?: string;
+  telephone?: string;
 };
 
 const logoUrl = "/buddybin-logo.png";
+
+function escapeHtml(value?: string) {
+  return (value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
 
 function shell(title: string, body: string, action?: { label: string; url: string }) {
   return `<!doctype html>
@@ -74,16 +87,26 @@ export const emailTemplates = {
       actionUrl ? { label: "Review payment", url: actionUrl } : undefined,
     );
   },
-  contactAcknowledgement({ name }: TemplateInput) {
+  contactAcknowledgement({ name, subject, ticketReference }: TemplateInput) {
     return shell(
-      "Message received",
-      `<p>Hi ${name || "there"},</p><p>Thanks for contacting BuddyBin. Our support team has received your message.</p>`,
+      "Support ticket received",
+      `<p>Hi ${escapeHtml(name) || "there"},</p><p>Thank you for contacting BuddyBin.</p><p>We have received your support ticket and our team will review it. We aim to reply by email or telephone within 24 hours.</p><p><strong>Ticket reference:</strong> ${escapeHtml(ticketReference) || "Pending"}</p><p><strong>Subject:</strong> ${escapeHtml(subject) || "Support enquiry"}</p><p>If you need to add anything else, please contact ${BRAND.supportEmailFallback} and include your ticket reference.</p>`,
     );
   },
   adminNewCustomer({ message }: TemplateInput) {
     return shell("New BuddyBin customer", `<p>${message || "A new customer has completed checkout."}</p>`);
   },
-  adminNewMessage({ message }: TemplateInput) {
-    return shell("New customer message", `<p>${message || "A customer has sent a support message."}</p>`);
+  adminNewMessage({
+    name,
+    email,
+    telephone,
+    subject,
+    message,
+    ticketReference,
+  }: TemplateInput) {
+    return shell(
+      "New BuddyBin support ticket",
+      `<p><strong>Ticket reference:</strong> ${escapeHtml(ticketReference) || "Pending"}</p><p><strong>Name:</strong> ${escapeHtml(name) || "Not supplied"}</p><p><strong>Email:</strong> ${escapeHtml(email) || "Not supplied"}</p><p><strong>Telephone:</strong> ${escapeHtml(telephone) || "Not supplied"}</p><p><strong>Subject:</strong> ${escapeHtml(subject) || "Support enquiry"}</p><p style="white-space:pre-wrap;">${escapeHtml(message) || "A customer has sent a support ticket."}</p>`,
+    );
   },
 };

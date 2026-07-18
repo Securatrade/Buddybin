@@ -1,6 +1,14 @@
 import { DEFAULT_PRICING_RULES, type PlanCalculation, type PricingRule } from "@/lib/pricing";
-import type { ContactMessageInput, SignupInput } from "@/lib/schemas";
-import type { OperationalStatus, PaymentStatus } from "@/lib/constants";
+import type {
+  ContactMessageInput,
+  PublicSupportTicketInput,
+  SignupInput,
+} from "@/lib/schemas";
+import type {
+  OperationalStatus,
+  PaymentStatus,
+  SupportTicketStatus,
+} from "@/lib/constants";
 import { hasSupabaseServiceEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
@@ -337,23 +345,63 @@ export async function associateProfileAuthUser(authUserId: string, email: string
 export async function storeContactMessage({
   profileId,
   customerPlanId,
+  customerName,
+  customerEmail,
+  customerTelephone,
   message,
 }: {
   profileId: string;
   customerPlanId: string;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  customerTelephone?: string | null;
   message: ContactMessageInput;
 }) {
   const supabase = createSupabaseServiceClient();
-  const { error } = await supabase.from("contact_messages").insert({
-    profile_id: profileId,
-    customer_plan_id: customerPlanId,
-    subject: message.subject,
-    message: message.message,
-  });
+  const { data, error } = await supabase
+    .from("contact_messages")
+    .insert({
+      profile_id: profileId,
+      customer_plan_id: customerPlanId,
+      name: customerName || null,
+      email: customerEmail || null,
+      telephone: customerTelephone || null,
+      subject: message.subject,
+      message: message.message,
+      source: "customer_portal",
+      status: "new",
+    })
+    .select("id,ticket_reference")
+    .single();
 
   if (error) {
     throw new Error(error.message);
   }
+
+  return data;
+}
+
+export async function storePublicSupportTicket(input: PublicSupportTicketInput) {
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("contact_messages")
+    .insert({
+      name: input.name,
+      email: input.email,
+      telephone: input.telephone,
+      subject: input.subject,
+      message: input.message,
+      source: "public_contact",
+      status: "new",
+    })
+    .select("id,ticket_reference")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 }
 
 export async function getAdminDashboard() {
@@ -403,7 +451,7 @@ export async function getAdminDashboard() {
     supabase
       .from("contact_messages")
       .select("id", { count: "exact", head: true })
-      .eq("is_read", false),
+      .in("status", ["new", "in_progress", "awaiting_customer"]),
   ]);
 
   return {
@@ -481,17 +529,36 @@ export async function getAdminCustomer(customerPlanId: string) {
   return data;
 }
 
-export async function getAdminMessages() {
+export async function getAdminMessages({
+  status,
+  q,
+}: {
+  status?: SupportTicketStatus | "all";
+  q?: string;
+} = {}) {
   if (!hasSupabaseServiceEnv()) {
     return [];
   }
 
   const supabase = createSupabaseServiceClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("contact_messages")
     .select("*, profiles(*), customer_plans(*)")
     .order("created_at", { ascending: false })
     .limit(100);
+
+  if (status && status !== "all") {
+    query = query.eq("status", status);
+  }
+
+  if (q?.trim()) {
+    const term = `%${q.trim()}%`;
+    query = query.or(
+      `ticket_reference.ilike.${term},name.ilike.${term},email.ilike.${term},telephone.ilike.${term},subject.ilike.${term}`,
+    );
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(error.message);
@@ -510,6 +577,49 @@ export async function markMessageRead(messageId: string) {
   if (error) {
     throw new Error(error.message);
   }
+}
+
+export async function updateSupportTicket({
+  messageId,
+  status,
+  internalNotes,
+}: {
+  messageId: string;
+  status: SupportTicketStatus;
+  internalNotes?: string;
+}) {
+  const supabase = createSupabaseServiceClient();
+  const updates: JsonRecord = {
+    status,
+    is_read: true,
+    internal_notes: internalNotes || null,
+  };
+
+  if (status === "resolved" || status === "closed") {
+    updates.resolved_at = new Date().toISOString();
+  } else {
+    updates.resolved_at = null;
+  }
+
+  const { data, error } = await supabase
+    .from("contact_messages")
+    .update(updates)
+    .eq("id", messageId)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await logAdminAudit({
+    action: "support_ticket_updated",
+    entityType: "contact_message",
+    entityId: messageId,
+    newValues: data as JsonRecord,
+  });
+
+  return data;
 }
 
 export async function updateOperationalStatus({

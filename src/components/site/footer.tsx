@@ -3,6 +3,9 @@ import { Logo } from "@/components/logo";
 import { BRAND } from "@/lib/constants";
 
 const legalLinks = [
+  ["Contact", "/contact"],
+  ["Login", "/login"],
+  ["Help", "/help"],
   ["Terms", "/terms"],
   ["Privacy", "/privacy"],
   ["Cookies", "/cookies"],

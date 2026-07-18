@@ -1,19 +1,18 @@
 import { env } from "@/lib/env";
 import { emailTemplates } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/email/send";
-import { getAccountSnapshot, storeContactMessage } from "@/lib/database";
+import { storePublicSupportTicket } from "@/lib/database";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { contactMessageSchema } from "@/lib/schemas";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { publicSupportTicketSchema } from "@/lib/schemas";
 import { getClientIp } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const limiter = checkRateLimit({
-    key: `contact:${getClientIp(request)}`,
-    limit: 5,
+    key: `support-ticket:${getClientIp(request)}`,
+    limit: 4,
     windowMs: 60 * 60 * 1000,
   });
 
@@ -24,49 +23,27 @@ export async function POST(request: Request) {
     );
   }
 
-  const parsed = contactMessageSchema.safeParse(await request.json());
+  const parsed = publicSupportTicketSchema.safeParse(await request.json());
   if (!parsed.success) {
     return Response.json(
-      { error: "Please check your support ticket.", issues: parsed.error.flatten() },
+      { error: "Please check your support ticket details." },
       { status: 400 },
     );
   }
 
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getUser();
-
-  if (!data.user) {
-    return Response.json({ error: "Your session has expired." }, { status: 401 });
-  }
-
-  const account = await getAccountSnapshot(data.user.id);
-  const plans = Array.isArray(account?.customer_plans)
-    ? account.customer_plans
-    : account?.customer_plans
-      ? [account.customer_plans]
-      : [];
-  const plan = plans[0];
-
-  if (!account || !plan) {
-    return Response.json({ error: "No BuddyBin account found." }, { status: 404 });
+  if (parsed.data.company) {
+    return Response.json({ ok: true, ticketReference: "BB-PENDING" });
   }
 
   try {
-    const ticket = await storeContactMessage({
-      profileId: account.id,
-      customerPlanId: plan.id,
-      customerName: account.full_name,
-      customerEmail: account.email,
-      customerTelephone: account.mobile,
-      message: parsed.data,
-    });
+    const ticket = await storePublicSupportTicket(parsed.data);
 
     await Promise.all([
       sendEmail({
-        to: account.email,
+        to: parsed.data.email,
         subject: `BuddyBin support ticket received: ${ticket.ticket_reference}`,
         html: emailTemplates.contactAcknowledgement({
-          name: account.full_name,
+          name: parsed.data.name,
           subject: parsed.data.subject,
           ticketReference: ticket.ticket_reference,
         }),
@@ -76,18 +53,18 @@ export async function POST(request: Request) {
         subject: `New BuddyBin Support Ticket: ${ticket.ticket_reference} ${parsed.data.subject}`,
         html: emailTemplates.adminNewMessage({
           ticketReference: ticket.ticket_reference,
-          name: account.full_name,
-          email: account.email,
-          telephone: account.mobile,
+          name: parsed.data.name,
+          email: parsed.data.email,
+          telephone: parsed.data.telephone,
           subject: parsed.data.subject,
-          message: `${parsed.data.message}\n\nRelated profile: ${account.id}\nRelated plan: ${plan.id}`,
+          message: parsed.data.message,
         }),
       }),
     ]);
 
     return Response.json({ ok: true, ticketReference: ticket.ticket_reference });
   } catch (error) {
-    logger.error("Customer support ticket creation failed", {
+    logger.error("Support ticket creation failed", {
       message: error instanceof Error ? error.message : "Unknown error",
     });
     return Response.json(

@@ -7,6 +7,7 @@ import {
   COLLECTION_FREQUENCIES,
   OPERATIONAL_STATUSES,
   PAYMENT_STATUSES,
+  SUPPORT_TICKET_STATUSES,
 } from "@/lib/constants";
 import { todayInputValue } from "@/lib/utils";
 
@@ -28,6 +29,10 @@ const collectionFrequencyValues = COLLECTION_FREQUENCIES.map(
 const binLocationValues = BIN_LOCATIONS as unknown as [
   (typeof BIN_LOCATIONS)[number],
   ...(typeof BIN_LOCATIONS)[number][],
+];
+const supportTicketStatusValues = SUPPORT_TICKET_STATUSES as unknown as [
+  (typeof SUPPORT_TICKET_STATUSES)[number],
+  ...(typeof SUPPORT_TICKET_STATUSES)[number][],
 ];
 
 export const ukPostcodeSchema = z
@@ -132,6 +137,20 @@ export const contactMessageSchema = z.object({
   message: z.string().trim().min(10, "Enter a message").max(2000),
 });
 
+export const publicSupportTicketSchema = contactMessageSchema.extend({
+  name: z.string().trim().min(2, "Enter your name").max(120),
+  email: z.email("Enter a valid email address").transform((v) => v.toLowerCase()),
+  telephone: z.string().trim().min(7, "Enter a telephone number").max(30),
+  company: z.string().max(0).optional().or(z.literal("")),
+});
+
+export const supportTicketStatusSchema = z.enum(supportTicketStatusValues);
+
+export const supportTicketUpdateSchema = z.object({
+  status: supportTicketStatusSchema,
+  internalNotes: z.string().trim().max(4000).optional().or(z.literal("")),
+});
+
 export const adminLoginSchema = z.object({
   pin: z.string().trim().min(4).max(32),
 });
@@ -174,3 +193,5 @@ export type PlanBinInput = z.infer<typeof planBinInputSchema>;
 export type CustomerDetailsInput = z.infer<typeof customerDetailsSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type ContactMessageInput = z.infer<typeof contactMessageSchema>;
+export type PublicSupportTicketInput = z.infer<typeof publicSupportTicketSchema>;
+export type SupportTicketUpdateInput = z.infer<typeof supportTicketUpdateSchema>;

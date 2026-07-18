@@ -15,7 +15,7 @@ const labels = [
   ["cancelled", "Cancelled"],
   ["activeSubscriptions", "Active subscriptions"],
   ["pastDueSubscriptions", "Past-due subscriptions"],
-  ["unreadMessages", "Unread messages"],
+  ["unreadMessages", "Open support tickets"],
 ] as const;
 
 export default async function AdminPage() {

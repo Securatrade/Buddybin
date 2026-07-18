@@ -4,7 +4,11 @@ import { requireAdmin } from "@/lib/admin/session";
 import { getAdminCustomer } from "@/lib/database";
 import { collectionSummary } from "@/lib/pricing";
 import { compactAddress, formatPence } from "@/lib/utils";
-import type { OperationalStatus } from "@/lib/constants";
+import {
+  SUPPORT_TICKET_STATUS_CONTENT,
+  type OperationalStatus,
+  type SupportTicketStatus,
+} from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +27,8 @@ type AdminMessageRow = {
   id: string;
   subject: string;
   message: string;
+  ticket_reference?: string | null;
+  status?: SupportTicketStatus | null;
 };
 
 export default async function AdminCustomerDetailPage({
@@ -91,7 +97,7 @@ export default async function AdminCustomerDetailPage({
                 <div key={bin.id} className="rounded-2xl border border-buddy-border p-4">
                   <p className="font-black text-buddy-navy">{bin.display_label}</p>
                   <p className="mt-1 text-sm text-slate-600">
-                    Cleaned every {bin.cleaning_frequency_weeks} weeks.{" "}
+                    Cleaned once a month.{" "}
                     {collectionSummary({
                       collectionDay: bin.collection_day,
                       collectionFrequency: bin.collection_frequency,
@@ -105,15 +111,21 @@ export default async function AdminCustomerDetailPage({
               ))}
             </div>
           </InfoCard>
-          <InfoCard title="Messages">
+          <InfoCard title="Support tickets">
             <div className="grid gap-3">
               {messages.map((message) => (
                 <article key={message.id} className="rounded-2xl border border-buddy-border p-4">
+                  <p className="text-sm font-bold text-slate-500">
+                    {message.ticket_reference || "BB-PENDING"} ·{" "}
+                    {message.status
+                      ? SUPPORT_TICKET_STATUS_CONTENT[message.status].label
+                      : "New"}
+                  </p>
                   <p className="font-black text-buddy-navy">{message.subject}</p>
                   <p className="mt-2 text-slate-600">{message.message}</p>
                 </article>
               ))}
-              {messages.length === 0 ? <p className="text-slate-600">No messages yet.</p> : null}
+              {messages.length === 0 ? <p className="text-slate-600">No support tickets yet.</p> : null}
             </div>
           </InfoCard>
         </section>

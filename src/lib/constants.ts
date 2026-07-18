@@ -55,6 +55,14 @@ export const PAYMENT_STATUSES = [
   "cancelled",
 ] as const;
 
+export const SUPPORT_TICKET_STATUSES = [
+  "new",
+  "in_progress",
+  "awaiting_customer",
+  "resolved",
+  "closed",
+] as const;
+
 export const OPERATIONAL_STATUS_CONTENT = {
   awaiting_cleaner: {
     label: "Awaiting cleaner",
@@ -83,7 +91,19 @@ export type CollectionFrequency =
 export type BinLocation = (typeof BIN_LOCATIONS)[number];
 export type OperationalStatus = (typeof OPERATIONAL_STATUSES)[number];
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+export type SupportTicketStatus = (typeof SUPPORT_TICKET_STATUSES)[number];
 
 export const BIN_TYPE_LABELS = Object.fromEntries(
   BIN_TYPES.map((bin) => [bin.value, bin.label]),
 ) as Record<BinType, string>;
+
+export const SUPPORT_TICKET_STATUS_CONTENT = {
+  new: { label: "New", tone: "blue" },
+  in_progress: { label: "In Progress", tone: "amber" },
+  awaiting_customer: { label: "Awaiting Customer", tone: "amber" },
+  resolved: { label: "Resolved", tone: "green" },
+  closed: { label: "Closed", tone: "slate" },
+} as const satisfies Record<
+  SupportTicketStatus,
+  { label: string; tone: "blue" | "amber" | "green" | "slate" }
+>;
