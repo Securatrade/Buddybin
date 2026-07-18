@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
-    "hash:admin-pin": "node scripts/hash-admin-pin.mjs"
+    "hash:admin-pin": "node scripts/hash-admin-pin.mjs",
+    "stripe:setup-prices": "node scripts/create-stripe-prices.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
