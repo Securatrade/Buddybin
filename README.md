@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BuddyBin
 
-## Getting Started
+BuddyBin is a production-oriented Next.js application for organising recurring UK wheelie-bin cleaning through independent local cleaning partners.
 
-First, run the development server:
+Tagline: **We sort it. You don't.**
+
+## What Is Built
+
+- Public website: `/`, `/how-it-works`, `/for-cleaners`, `/help`, `/login`, legal pages.
+- Mobile-first signup flow with address, bin selection, independent collection schedules, customer details, review and Stripe Checkout handoff.
+- Server-side Zod validation and server-side price recalculation from Supabase pricing rules.
+- Stripe Checkout subscriptions, billing price IDs, webhook verification and idempotent event storage.
+- Supabase PostgreSQL schema, RLS policies, migrations and seed pricing.
+- Supabase passwordless magic-link login and minimal customer portal at `/account`.
+- Contact message storage, rate limiting and Resend email notifications.
+- Admin PIN login at `/admin`, signed HTTP-only session cookie, lockout/rate limiting, dashboard, customer table/detail, messages and pricing management.
+- PM2, Nginx and Ubuntu 24.04 deployment documentation.
+
+## Local Launch
 
 ```bash
+npm install
+cp .env.example .env.local
+npm run hash:admin-pin -- 1722
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+External services are required for real checkout, login and email:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Supabase project URL, anon key and service-role key.
+- Stripe secret key, publishable key, webhook secret, products and recurring monthly Price IDs.
+- Resend API key and verified sending domain/email.
 
-## Learn More
+## Quality Commands
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+npm run test:e2e
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Playwright E2E tests mock Stripe Checkout creation so they can run locally without live Stripe credentials.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## File Structure
 
-## Deploy on Vercel
+```text
+src/app                 App Router pages and route handlers
+src/components          UI, signup, account and admin components
+src/lib                 pricing, validation, Supabase, Stripe, email and security helpers
+supabase/migrations     PostgreSQL schema, RLS and seed pricing
+docs                    setup and deployment guides
+deploy/nginx            Nginx site example
+scripts                 admin PIN hash and environment checks
+ecosystem.config.cjs    PM2 production process config
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Service Setup
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Read:
+
+- `docs/supabase.md`
+- `docs/stripe.md`
+- `docs/resend.md`
+- `docs/deployment.md`
+
+Legal pages include launch placeholders marked for legal review. Do not publish without legal review.

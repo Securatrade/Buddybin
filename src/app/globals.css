@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
 :root {
+  --color-navy: #061b2f;
+  --color-green: #39b929;
+  --color-blue: #159ee4;
+  --color-white: #ffffff;
+  --color-pale-green: #f5f9f5;
+  --color-border: #dde8e0;
+  --color-body: #132238;
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #132238;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: Arial, Helvetica, sans-serif;
+  --color-buddy-navy: var(--color-navy);
+  --color-buddy-green: var(--color-green);
+  --color-buddy-blue: var(--color-blue);
+  --color-buddy-pale: var(--color-pale-green);
+  --color-buddy-border: var(--color-border);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  outline-color: var(--color-blue);
+}
+
+::selection {
+  background: rgba(57, 185, 41, 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

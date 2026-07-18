@@ -1,0 +1,56 @@
+import { Mail } from "lucide-react";
+import { SiteFooter } from "@/components/site/footer";
+import { SiteHeader } from "@/components/site/header";
+import { BRAND } from "@/lib/constants";
+
+export const metadata = {
+  title: "Help",
+};
+
+const faqs = [
+  ["Does BuddyBin clean the bins directly?", "No. BuddyBin arranges recurring bin-cleaning services through independent local cleaning partners."],
+  ["Can I cancel?", "Yes. The launch cancellation wording is included in the cancellation policy and should be reviewed by a solicitor before public launch."],
+  ["Do I need to request a quote?", "No. The signup flow calculates the monthly price from active pricing rules and starts Stripe Checkout."],
+  ["When will cleaning happen?", "BuddyBin arranges cleaning around your council collection schedule. Exact operational timing is confirmed after a local partner is assigned."],
+] as const;
+
+export default function HelpPage() {
+  return (
+    <>
+      <SiteHeader />
+      <main className="bg-white">
+        <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+          <p className="font-bold uppercase tracking-[0.18em] text-buddy-green">
+            Help
+          </p>
+          <h1 className="mt-3 text-4xl font-black text-buddy-navy sm:text-6xl">
+            Questions about BuddyBin.
+          </h1>
+          <p className="mt-5 text-lg leading-8 text-slate-600">
+            {BRAND.legalArrangement}
+          </p>
+          <div className="mt-10 grid gap-4">
+            {faqs.map(([question, answer]) => (
+              <article key={question} className="rounded-2xl border border-buddy-border bg-white p-6 shadow-sm">
+                <h2 className="text-xl font-black text-buddy-navy">{question}</h2>
+                <p className="mt-3 leading-7 text-slate-600">{answer}</p>
+              </article>
+            ))}
+          </div>
+          <div className="mt-8 rounded-2xl border border-buddy-border bg-buddy-pale p-6">
+            <div className="flex items-center gap-3 text-buddy-navy">
+              <Mail aria-hidden className="text-buddy-blue" />
+              <h2 className="text-xl font-black">Need support?</h2>
+            </div>
+            <p className="mt-3 text-slate-700">
+              Customers can send support messages through the secure account
+              portal after checkout. Pre-launch enquiries can use the support
+              email configured in Resend.
+            </p>
+          </div>
+        </section>
+      </main>
+      <SiteFooter />
+    </>
+  );
+}
