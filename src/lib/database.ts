@@ -166,7 +166,7 @@ export async function createPendingSignup(
       profile_id: profile.id,
       address_line_1: input.address.addressLine1,
       address_line_2: input.address.addressLine2 || null,
-      town: input.address.town,
+      town: input.address.town || "Not supplied",
       county: input.address.county || null,
       postcode: input.address.postcode,
       bin_location: input.customer.binLocation,

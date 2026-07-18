@@ -468,18 +468,6 @@ export function SignupFlow() {
               {step === 0 ? (
                 <div className="space-y-5">
                   <div>
-                    <label className="font-bold text-buddy-navy" htmlFor="postcode">
-                      Postcode
-                    </label>
-                    <input
-                      id="postcode"
-                      className={fieldClass}
-                      value={address.postcode}
-                      onChange={(event) => updateAddress("postcode", event.target.value)}
-                      autoComplete="postal-code"
-                    />
-                  </div>
-                  <div>
                     <label className="font-bold text-buddy-navy" htmlFor="addressLine1">
                       Address line 1
                     </label>
@@ -495,46 +483,16 @@ export function SignupFlow() {
                     />
                   </div>
                   <div>
-                    <label className="font-bold text-buddy-navy" htmlFor="addressLine2">
-                      Address line 2 optional
+                    <label className="font-bold text-buddy-navy" htmlFor="postcode">
+                      Postcode
                     </label>
                     <input
-                      id="addressLine2"
+                      id="postcode"
                       className={fieldClass}
-                      value={address.addressLine2 || ""}
-                      onChange={(event) =>
-                        updateAddress("addressLine2", event.target.value)
-                      }
-                      autoComplete="address-line2"
+                      value={address.postcode}
+                      onChange={(event) => updateAddress("postcode", event.target.value)}
+                      autoComplete="postal-code"
                     />
-                  </div>
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <div>
-                      <label className="font-bold text-buddy-navy" htmlFor="town">
-                        Town or city
-                      </label>
-                      <input
-                        id="town"
-                        className={fieldClass}
-                        value={address.town}
-                        onChange={(event) => updateAddress("town", event.target.value)}
-                        autoComplete="address-level2"
-                      />
-                    </div>
-                    <div>
-                      <label className="font-bold text-buddy-navy" htmlFor="county">
-                        County optional
-                      </label>
-                      <input
-                        id="county"
-                        className={fieldClass}
-                        value={address.county || ""}
-                        onChange={(event) =>
-                          updateAddress("county", event.target.value)
-                        }
-                        autoComplete="address-level1"
-                      />
-                    </div>
                   </div>
                   {addressError ? (
                     <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
@@ -934,9 +892,7 @@ export function SignupFlow() {
                   <div className="rounded-2xl border border-buddy-border bg-buddy-pale p-5">
                     <h4 className="font-black text-buddy-navy">Address</h4>
                     <p className="mt-2 text-slate-700">
-                      {address.addressLine1}
-                      {address.addressLine2 ? `, ${address.addressLine2}` : ""},{" "}
-                      {address.town}, {address.postcode}
+                      {address.addressLine1}, {address.postcode}
                     </p>
                   </div>
                   <div className="grid gap-3">

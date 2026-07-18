@@ -45,7 +45,7 @@ export const addressSchema = z.object({
   postcode: ukPostcodeSchema,
   addressLine1: z.string().trim().min(2, "Enter the first line of the address"),
   addressLine2: z.string().trim().max(120).optional().or(z.literal("")),
-  town: z.string().trim().min(2, "Enter a town or city"),
+  town: z.string().trim().max(80).optional().or(z.literal("")),
   county: z.string().trim().max(80).optional().or(z.literal("")),
 });
 
