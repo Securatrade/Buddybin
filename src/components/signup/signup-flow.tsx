@@ -67,6 +67,117 @@ const blankCustomer: CustomerDetailsInput = {
   arrangementAccepted: false,
 };
 
+type GoogleAddressComponent = {
+  long_name: string;
+  short_name: string;
+  types: string[];
+};
+
+type GooglePlaceResult = {
+  address_components?: GoogleAddressComponent[];
+  formatted_address?: string;
+};
+
+type GoogleMapsAutocomplete = {
+  addListener: (
+    eventName: "place_changed",
+    handler: () => void,
+  ) => { remove: () => void };
+  getPlace: () => GooglePlaceResult;
+};
+
+type GoogleMapsApi = {
+  maps: {
+    places: {
+      Autocomplete: new (
+        input: HTMLInputElement,
+        options: {
+          componentRestrictions?: { country: string | string[] };
+          fields?: string[];
+          types?: string[];
+        },
+      ) => GoogleMapsAutocomplete;
+    };
+  };
+};
+
+declare global {
+  interface Window {
+    google?: GoogleMapsApi;
+    __buddyGooglePlacesReady?: () => void;
+  }
+}
+
+let googlePlacesPromise: Promise<GoogleMapsApi> | null = null;
+
+function loadGooglePlaces(apiKey: string) {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Google Places can only load in the browser"));
+  }
+
+  if (window.google?.maps?.places) {
+    return Promise.resolve(window.google);
+  }
+
+  if (googlePlacesPromise) {
+    return googlePlacesPromise;
+  }
+
+  googlePlacesPromise = new Promise<GoogleMapsApi>((resolve, reject) => {
+    window.__buddyGooglePlacesReady = () => {
+      if (window.google?.maps?.places) {
+        resolve(window.google);
+      } else {
+        reject(new Error("Google Places did not load"));
+      }
+    };
+
+    const script = document.createElement("script");
+    script.async = true;
+    script.defer = true;
+    script.dataset.buddyGooglePlaces = "true";
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(
+      apiKey,
+    )}&libraries=places&callback=__buddyGooglePlacesReady`;
+    script.onerror = () => reject(new Error("Google Places script failed"));
+    document.head.appendChild(script);
+  });
+
+  return googlePlacesPromise;
+}
+
+function addressComponent(
+  components: GoogleAddressComponent[],
+  type: string,
+  key: "long_name" | "short_name" = "long_name",
+) {
+  return components.find((component) => component.types.includes(type))?.[key] || "";
+}
+
+function addressFromGooglePlace(place: GooglePlaceResult): Partial<AddressInput> {
+  const components = place.address_components || [];
+  const streetNumber = addressComponent(components, "street_number");
+  const route = addressComponent(components, "route");
+  const premise = addressComponent(components, "premise");
+  const subpremise = addressComponent(components, "subpremise");
+  const street = [streetNumber, route].filter(Boolean).join(" ");
+  const formattedFirstLine = place.formatted_address?.split(",")[0]?.trim() || "";
+
+  return {
+    addressLine1:
+      [subpremise, premise, street].filter(Boolean).join(", ") ||
+      formattedFirstLine,
+    town:
+      addressComponent(components, "postal_town") ||
+      addressComponent(components, "locality") ||
+      addressComponent(components, "administrative_area_level_3"),
+    county:
+      addressComponent(components, "administrative_area_level_2") ||
+      addressComponent(components, "administrative_area_level_1"),
+    postcode: addressComponent(components, "postal_code", "short_name"),
+  };
+}
+
 function newClientId() {
   return globalThis.crypto?.randomUUID?.() || `bin-${Date.now()}-${Math.random()}`;
 }
@@ -95,6 +206,7 @@ export function SignupFlow() {
   const [pricingRules, setPricingRules] = useState(DEFAULT_PRICING_RULES);
   const [showMobilePrice, setShowMobilePrice] = useState(false);
   const signupRef = useRef<HTMLElement | null>(null);
+  const addressLine1Ref = useRef<HTMLInputElement | null>(null);
 
   const customerForm = useForm<CustomerDetailsInput>({
     resolver: zodResolver(customerDetailsSchema),
@@ -137,6 +249,52 @@ export function SignupFlow() {
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const input = addressLine1Ref.current;
+    if (step !== 0 || !apiKey || !input) {
+      return;
+    }
+
+    let cancelled = false;
+    let listener: { remove: () => void } | null = null;
+
+    loadGooglePlaces(apiKey)
+      .then((google) => {
+        if (cancelled || !addressLine1Ref.current) {
+          return;
+        }
+
+        const autocomplete = new google.maps.places.Autocomplete(
+          addressLine1Ref.current,
+          {
+            componentRestrictions: { country: "gb" },
+            fields: ["address_components", "formatted_address"],
+            types: ["address"],
+          },
+        );
+
+        listener = autocomplete.addListener("place_changed", () => {
+          const googleAddress = addressFromGooglePlace(autocomplete.getPlace());
+          setAddress((current) => ({
+            ...current,
+            ...Object.fromEntries(
+              Object.entries(googleAddress).filter(([, value]) => value),
+            ),
+          }));
+          setAddressError("");
+        });
+      })
+      .catch(() => {
+        googlePlacesPromise = null;
+      });
+
+    return () => {
+      cancelled = true;
+      listener?.remove();
+    };
+  }, [step]);
 
   const calculation = useMemo(
     () => calculatePlanTotal(bins, pricingRules),
@@ -327,6 +485,7 @@ export function SignupFlow() {
                     </label>
                     <input
                       id="addressLine1"
+                      ref={addressLine1Ref}
                       className={fieldClass}
                       value={address.addressLine1}
                       onChange={(event) =>
