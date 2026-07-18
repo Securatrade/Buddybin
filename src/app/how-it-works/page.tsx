@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 const sections = [
-  ["Choose your bins", "Select general waste, recycling, garden waste or food waste bins and choose a cleaning frequency for each one."],
+  ["Choose your bins", "Select the general waste, recycling, garden waste or food waste bins you want cleaned once a month."],
   ["Share council collection details", "Tell BuddyBin the collection day and whether each bin is collected weekly or every two weeks."],
   ["One monthly payment", "BuddyBin calculates the plan securely on the server and starts a Stripe-hosted monthly subscription."],
   ["Local partner arranged", "BuddyBin arranges the service through an independent local cleaning partner and keeps your account status updated."],

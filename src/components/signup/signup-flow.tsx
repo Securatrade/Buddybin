@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  CalendarDays,
   CheckCircle2,
   CreditCard,
   Edit3,
@@ -19,7 +18,6 @@ import {
   BIN_LOCATIONS,
   BIN_TYPE_LABELS,
   BIN_TYPES,
-  CLEANING_FREQUENCIES,
   COLLECTION_DAYS,
   COLLECTION_FREQUENCIES,
   type BinType,
@@ -40,7 +38,6 @@ import { cn, todayInputValue } from "@/lib/utils";
 const steps = [
   { title: "Postcode and address", icon: Home },
   { title: "Choose bins", icon: Plus },
-  { title: "Collection information", icon: CalendarDays },
   { title: "Customer details", icon: CheckCircle2 },
   { title: "Review and payment", icon: CreditCard },
 ] as const;
@@ -66,6 +63,8 @@ const blankCustomer: CustomerDetailsInput = {
   termsAccepted: false,
   arrangementAccepted: false,
 };
+
+const MONTHLY_CLEANING_FREQUENCY_WEEKS = 4 as const;
 
 type GoogleAddressComponent = {
   long_name: string;
@@ -186,7 +185,7 @@ function createDraftBin(binType: BinType = "general_waste"): PlanBinInput {
   return {
     clientId: newClientId(),
     binType,
-    cleaningFrequencyWeeks: 4,
+    cleaningFrequencyWeeks: MONTHLY_CLEANING_FREQUENCY_WEEKS,
     collectionDay: "Tuesday",
     collectionFrequency: "weekly",
     nextCollectionDate: "",
@@ -319,7 +318,10 @@ export function SignupFlow() {
   }
 
   function saveDraftBin() {
-    const parsed = planBinInputSchema.safeParse(draftBin);
+    const parsed = planBinInputSchema.safeParse({
+      ...draftBin,
+      cleaningFrequencyWeeks: MONTHLY_CLEANING_FREQUENCY_WEEKS,
+    });
     if (!parsed.success) {
       setBinError(
         parsed.error.issues[0]?.message ||
@@ -368,13 +370,9 @@ export function SignupFlow() {
     setStep(2);
   }
 
-  function continueFromCollection() {
-    setStep(3);
-  }
-
   const continueFromCustomer = customerForm.handleSubmit((values) => {
     customerForm.reset(values);
-    setStep(4);
+    setStep(3);
     trackSignupEvent("customer_details_completed");
   });
 
@@ -419,24 +417,24 @@ export function SignupFlow() {
   }
 
   return (
-    <section id="signup" ref={signupRef} className="bg-white py-16 sm:py-20">
+    <section id="signup" ref={signupRef} className="bg-white py-8 sm:py-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl">
           <p className="font-bold uppercase tracking-[0.18em] text-buddy-green">
             Get started
           </p>
           <h2 className="mt-3 text-3xl font-black text-buddy-navy sm:text-4xl">
-            Set up your BuddyBin plan
+            Sign up for regular wheelie bin cleans
           </h2>
           <p className="mt-4 text-lg leading-8 text-slate-600">
-            Choose your bins, tell us the council collection schedule and move to
-            one simple monthly payment.
+            Tell us your address, choose your bins and pay monthly. Bins are
+            cleaned once a month.
           </p>
         </div>
 
-        <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="rounded-[28px] border border-buddy-border bg-white p-4 shadow-sm sm:p-6 lg:p-8">
-            <ol className="grid gap-2 sm:grid-cols-5" aria-label="Signup progress">
+            <ol className="grid gap-2 sm:grid-cols-4" aria-label="Signup progress">
               {steps.map((item, index) => {
                 const Icon = item.icon;
                 const active = index === step;
@@ -512,8 +510,8 @@ export function SignupFlow() {
                       Choose and configure a bin
                     </h3>
                     <p className="mt-2 text-slate-600">
-                      Each bin can have its own cleaning frequency and council
-                      collection schedule.
+                      Choose the bins you want cleaned monthly and tell us the
+                      council collection schedule.
                     </p>
                   </div>
 
@@ -545,36 +543,9 @@ export function SignupFlow() {
                     ))}
                   </div>
 
-                  <div>
-                    <p className="font-bold text-buddy-navy">Cleaning frequency</p>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                      {CLEANING_FREQUENCIES.map((frequency) => (
-                        <button
-                          key={frequency.value}
-                          type="button"
-                          onClick={() =>
-                            setDraftBin((current) => ({
-                              ...current,
-                              cleaningFrequencyWeeks: frequency.value,
-                            }))
-                          }
-                          className={cn(
-                            "min-h-20 rounded-2xl border px-4 py-3 text-left font-bold transition",
-                            draftBin.cleaningFrequencyWeeks === frequency.value
-                              ? "border-buddy-green bg-buddy-pale text-buddy-navy"
-                              : "border-buddy-border bg-white text-buddy-navy",
-                          )}
-                        >
-                          {frequency.label}
-                          {"badge" in frequency ? (
-                            <span className="mt-2 block text-xs text-buddy-green">
-                              {frequency.badge}
-                            </span>
-                          ) : null}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <p className="rounded-2xl bg-buddy-pale px-4 py-3 text-sm font-bold text-buddy-navy">
+                    Every bin is cleaned once a month.
+                  </p>
 
                   <div className="grid gap-5 sm:grid-cols-2">
                     <div>
@@ -693,7 +664,7 @@ export function SignupFlow() {
                                 {bin.displayLabel}
                               </h4>
                               <p className="mt-1 text-sm text-slate-700">
-                                Cleaned every {bin.cleaningFrequencyWeeks} weeks
+                                Cleaned once a month
                               </p>
                               <p className="mt-1 text-sm text-slate-700">
                                 {collectionSummary(bin)}
@@ -728,46 +699,6 @@ export function SignupFlow() {
               ) : null}
 
               {step === 2 ? (
-                <div className="space-y-5">
-                  <h3 className="text-2xl font-black text-buddy-navy">
-                    Collection information
-                  </h3>
-                  <p className="text-slate-600">
-                    BuddyBin uses these council collection details to arrange
-                    cleaning around your collection schedule.
-                  </p>
-                  <div className="grid gap-3">
-                    {calculation.bins.map((bin) => (
-                      <div
-                        key={bin.clientId}
-                        className="rounded-2xl border border-buddy-border bg-white p-4"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="font-black text-buddy-navy">{bin.displayLabel}</p>
-                            <p className="mt-1 text-sm text-slate-700">
-                              {collectionSummary(bin)}
-                            </p>
-                          </div>
-                          <Button type="button" variant="secondary" size="sm" onClick={() => editBin(bin)}>
-                            Edit
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    <Button type="button" variant="secondary" onClick={() => setStep(1)}>
-                      + Add another bin
-                    </Button>
-                    <Button type="button" onClick={continueFromCollection}>
-                      Continue
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-
-              {step === 3 ? (
                 <form className="space-y-5" onSubmit={continueFromCustomer}>
                   <h3 className="text-2xl font-black text-buddy-navy">
                     Customer details
@@ -876,7 +807,7 @@ export function SignupFlow() {
                     error={customerForm.formState.errors.arrangementAccepted?.message}
                   />
                   <div className="flex flex-wrap gap-3">
-                    <Button type="button" variant="secondary" onClick={() => setStep(2)}>
+                    <Button type="button" variant="secondary" onClick={() => setStep(1)}>
                       Back
                     </Button>
                     <Button type="submit">Review plan</Button>
@@ -884,7 +815,7 @@ export function SignupFlow() {
                 </form>
               ) : null}
 
-              {step === 4 ? (
+              {step === 3 ? (
                 <div className="space-y-6">
                   <h3 className="text-2xl font-black text-buddy-navy">
                     Review and payment
@@ -903,7 +834,7 @@ export function SignupFlow() {
                       >
                         <p className="font-black text-buddy-navy">{bin.displayLabel}</p>
                         <p className="mt-1 text-sm text-slate-700">
-                          Cleaned every {bin.cleaningFrequencyWeeks} weeks
+                          Cleaned once a month
                         </p>
                         <p className="mt-1 text-sm text-slate-700">
                           {collectionSummary(bin)}
@@ -921,7 +852,7 @@ export function SignupFlow() {
                     </p>
                   ) : null}
                   <div className="flex flex-wrap gap-3">
-                    <Button type="button" variant="secondary" onClick={() => setStep(3)}>
+                    <Button type="button" variant="secondary" onClick={() => setStep(2)}>
                       Back
                     </Button>
                     <Button type="button" disabled={submitting} onClick={startCheckout}>

@@ -11,11 +11,11 @@ export const metadata: Metadata = {
     template: "%s | BuddyBin",
   },
   description:
-    "BuddyBin organises recurring wheelie-bin cleaning through independent local cleaning partners.",
+    "BuddyBin organises monthly wheelie-bin cleaning through independent local cleaning partners.",
   openGraph: {
     title: "BuddyBin",
     description:
-      "Choose your bins and collection schedule. BuddyBin organises a local cleaning partner and one simple monthly payment.",
+      "Sign up for regular wheelie bin cleans with one simple monthly payment.",
     images: ["/buddybin-logo.png"],
   },
 };

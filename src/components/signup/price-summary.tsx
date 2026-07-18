@@ -25,7 +25,7 @@ export function PriceSummary({
             <div key={bin.clientId} className="flex items-start justify-between gap-4 text-sm">
               <div>
                 <p className="font-semibold text-buddy-navy">{bin.displayLabel}</p>
-                <p className="text-slate-600">Cleaned every {bin.cleaningFrequencyWeeks} weeks</p>
+                <p className="text-slate-600">Cleaned once a month</p>
               </div>
               <p className="font-bold text-buddy-navy">{formatPence(bin.monthlyPricePence)}</p>
             </div>
