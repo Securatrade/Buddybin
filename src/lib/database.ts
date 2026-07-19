@@ -73,6 +73,7 @@ export async function getPricingRulesForAdmin() {
     .select("*")
     .in("bin_type", supportedBinTypeValues)
     .eq("cleaning_frequency_weeks", MONTHLY_CLEANING_FREQUENCY_WEEKS)
+    .eq("is_active", true)
     .order("bin_type", { ascending: true })
     .order("cleaning_frequency_weeks", { ascending: true })
     .order("version", { ascending: false });

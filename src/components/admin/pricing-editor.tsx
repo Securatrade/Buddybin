@@ -28,7 +28,6 @@ function PricingRuleForm({ rule }: { rule: PricingRule }) {
   const [additionalBinPrice, setAdditionalBinPrice] = useState(
     (rule.additionalBinPricePence / 100).toFixed(2),
   );
-  const [isActive, setIsActive] = useState(rule.isActive);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -47,7 +46,7 @@ function PricingRuleForm({ rule }: { rule: PricingRule }) {
           cleaningFrequencyWeeks: rule.cleaningFrequencyWeeks,
           firstBinPrice,
           additionalBinPrice,
-          isActive,
+          isActive: true,
         }),
       });
       const payload = await response.json();
@@ -70,7 +69,7 @@ function PricingRuleForm({ rule }: { rule: PricingRule }) {
 
   return (
     <form onSubmit={submit} className="rounded-2xl border border-buddy-border bg-white p-5 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div>
         <div>
           <h2 className="text-xl font-black text-buddy-navy">
             {BIN_TYPE_LABELS[rule.binType]} monthly
@@ -88,15 +87,6 @@ function PricingRuleForm({ rule }: { rule: PricingRule }) {
             {rule.isActive ? "Active" : "Inactive"}
           </p>
         </div>
-        <label className="flex items-center gap-2 text-sm font-bold text-buddy-navy">
-          <input
-            type="checkbox"
-            checked={isActive}
-            onChange={(event) => setIsActive(event.target.checked)}
-            className="h-5 w-5"
-          />
-          Active for new signups
-        </label>
       </div>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <label className="font-bold text-buddy-navy">
