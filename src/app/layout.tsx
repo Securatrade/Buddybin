@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { Analytics } from "@/components/analytics";
+import { siteUrl } from "@/lib/env";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://www.buddybin.co.uk",
-  ),
+  metadataBase: new URL(siteUrl()),
   title: {
     default: "BuddyBin | We sort it. You don't.",
     template: "%s | BuddyBin",

@@ -18,6 +18,13 @@ export class ConfigurationError extends Error {
   }
 }
 
+export const PRODUCTION_SITE_URL = "https://buddybin.co.uk";
+export const LOCAL_SITE_URL = "http://localhost:3000";
+
+function isLocalHost(hostname: string) {
+  return ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(hostname);
+}
+
 export function env(name: ServerEnvKey, options?: { optional?: boolean }) {
   const value = process.env[name];
   if (!value && !options?.optional) {
@@ -28,10 +35,29 @@ export function env(name: ServerEnvKey, options?: { optional?: boolean }) {
 }
 
 export function siteUrl() {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    "http://localhost:3000"
-  );
+  const fallback =
+    process.env.NODE_ENV === "production" ? PRODUCTION_SITE_URL : LOCAL_SITE_URL;
+  const configured =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() || process.env.SITE_URL?.trim();
+
+  if (!configured) {
+    return fallback;
+  }
+
+  try {
+    const url = new URL(configured);
+    if (process.env.NODE_ENV === "production" && isLocalHost(url.hostname)) {
+      return PRODUCTION_SITE_URL;
+    }
+
+    return url.origin;
+  } catch {
+    return fallback;
+  }
+}
+
+export function authCallbackUrl() {
+  return `${siteUrl()}/auth/callback`;
 }
 
 export function hasSupabaseBrowserEnv() {

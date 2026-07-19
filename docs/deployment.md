@@ -59,6 +59,7 @@ sudo journalctl -u nginx --since "1 hour ago"
 
 ## Required External Credentials
 
+- `NEXT_PUBLIC_SITE_URL=https://buddybin.co.uk`
 - Supabase URL, anon key and service-role key
 - Stripe secret key, webhook secret and Price IDs
 - Resend API key and verified sender

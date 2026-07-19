@@ -1,4 +1,4 @@
-import { siteUrl } from "@/lib/env";
+import { authCallbackUrl, siteUrl } from "@/lib/env";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
 export async function createCustomerLoginLink(email: string) {
@@ -7,7 +7,7 @@ export async function createCustomerLoginLink(email: string) {
     type: "magiclink",
     email,
     options: {
-      redirectTo: `${siteUrl()}/auth/callback`,
+      redirectTo: authCallbackUrl(),
     },
   });
 

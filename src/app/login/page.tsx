@@ -6,7 +6,32 @@ export const metadata = {
   title: "Log in",
 };
 
-export default function LoginPage() {
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+const loginErrors: Record<string, string> = {
+  invalid_link:
+    "That login link is invalid or has expired. Please request a fresh secure BuddyBin login link.",
+  session_failed:
+    "We could not create your login session. Please request a fresh secure BuddyBin login link.",
+};
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    error?: string | string[];
+    logged_out?: string | string[];
+  }>;
+}) {
+  const params = await searchParams;
+  const errorCode = firstParam(params.error);
+  const initialError = errorCode ? loginErrors[errorCode] || loginErrors.invalid_link : "";
+  const initialMessage = firstParam(params.logged_out)
+    ? "You have been logged out."
+    : "";
+
   return (
     <>
       <SiteHeader />
@@ -20,11 +45,11 @@ export default function LoginPage() {
               Open your BuddyBin account with a secure email link.
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-600">
-              No password is needed. Enter the email address used at checkout and
-              Supabase will send a magic link.
+              No password is needed. Enter the email address used when you
+              signed up and we&apos;ll send you a secure BuddyBin login link.
             </p>
           </div>
-          <LoginForm />
+          <LoginForm initialError={initialError} initialMessage={initialMessage} />
         </div>
       </main>
       <SiteFooter />

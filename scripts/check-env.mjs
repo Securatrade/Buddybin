@@ -24,4 +24,18 @@ if ((process.env.ADMIN_SESSION_SECRET || "").length < 32) {
   process.exit(1);
 }
 
+if (process.env.NODE_ENV === "production") {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  try {
+    const hostname = new URL(siteUrl).hostname;
+    if (["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(hostname)) {
+      console.error("NEXT_PUBLIC_SITE_URL must not point to localhost in production.");
+      process.exit(1);
+    }
+  } catch {
+    console.error("NEXT_PUBLIC_SITE_URL must be a valid absolute URL.");
+    process.exit(1);
+  }
+}
+
 console.log("BuddyBin environment variables look ready.");

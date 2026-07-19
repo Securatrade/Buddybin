@@ -3,10 +3,19 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-export function LoginForm() {
+const sentMessage =
+  "Check your inbox for your secure BuddyBin login link. It may take a minute to arrive. Please also check your junk folder.";
+
+export function LoginForm({
+  initialError = "",
+  initialMessage = "",
+}: {
+  initialError?: string;
+  initialMessage?: string;
+}) {
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [message, setMessage] = useState(initialMessage);
+  const [error, setError] = useState(initialError);
   const [submitting, setSubmitting] = useState(false);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -27,7 +36,7 @@ export function LoginForm() {
         throw new Error(payload.error || "Login failed");
       }
 
-      setMessage(payload.message || "Check your email for a secure login link.");
+      setMessage(payload.message || sentMessage);
     } catch (loginError) {
       setError(
         loginError instanceof Error

@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { siteUrl } from "@/lib/env";
+import { authCallbackUrl } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const { error } = await supabase.auth.signInWithOtp({
       email: parsed.data.email,
       options: {
-        emailRedirectTo: `${siteUrl()}/auth/callback`,
+        emailRedirectTo: authCallbackUrl(),
       },
     });
 
@@ -30,7 +30,8 @@ export async function POST(request: Request) {
 
     return Response.json({
       ok: true,
-      message: "Check your email for a secure login link.",
+      message:
+        "Check your inbox for your secure BuddyBin login link. It may take a minute to arrive. Please also check your junk folder.",
     });
   } catch (error) {
     logger.error("Magic link login failed", {
