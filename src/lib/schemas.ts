@@ -2,9 +2,9 @@ import { z } from "zod";
 import {
   BIN_LOCATIONS,
   BIN_TYPES,
-  CLEANING_FREQUENCIES,
   COLLECTION_DAYS,
   COLLECTION_FREQUENCIES,
+  MONTHLY_CLEANING_FREQUENCY_WEEKS,
   OPERATIONAL_STATUSES,
   PAYMENT_STATUSES,
   SUPPORT_TICKET_STATUSES,
@@ -15,7 +15,6 @@ const binTypeValues = BIN_TYPES.map((bin) => bin.value) as [
   (typeof BIN_TYPES)[number]["value"],
   ...(typeof BIN_TYPES)[number]["value"][],
 ];
-const frequencyValues = CLEANING_FREQUENCIES.map((frequency) => frequency.value);
 const collectionDayValues = COLLECTION_DAYS as unknown as [
   (typeof COLLECTION_DAYS)[number],
   ...(typeof COLLECTION_DAYS)[number][],
@@ -59,11 +58,7 @@ export const planBinInputSchema = z
     clientId: z.string().min(1),
     binType: z.enum(binTypeValues),
     displayLabel: z.string().trim().min(1).max(80).optional(),
-    cleaningFrequencyWeeks: z.union([
-      z.literal(frequencyValues[0]),
-      z.literal(frequencyValues[1]),
-      z.literal(frequencyValues[2]),
-    ]),
+    cleaningFrequencyWeeks: z.literal(MONTHLY_CLEANING_FREQUENCY_WEEKS),
     collectionDay: z.enum(collectionDayValues),
     collectionFrequency: z.enum(collectionFrequencyValues),
     nextCollectionDate: z.string().optional().or(z.literal("")),
@@ -175,11 +170,7 @@ export const adminStatusUpdateSchema = z.object({
 export const pricingUpdateSchema = z.object({
   pricingRuleId: z.uuid().optional(),
   binType: z.enum(binTypeValues),
-  cleaningFrequencyWeeks: z.union([
-    z.literal(frequencyValues[0]),
-    z.literal(frequencyValues[1]),
-    z.literal(frequencyValues[2]),
-  ]),
+  cleaningFrequencyWeeks: z.literal(MONTHLY_CLEANING_FREQUENCY_WEEKS),
   firstBinPrice: z.string().trim().min(1),
   additionalBinPrice: z.string().trim().min(1),
   isActive: z.boolean(),

@@ -12,10 +12,14 @@ export const BIN_TYPES = [
   { value: "garden_waste", label: "Garden Waste", colour: "#39B929" },
 ] as const;
 
+export const MONTHLY_CLEANING_FREQUENCY_WEEKS = 4 as const;
+
 export const CLEANING_FREQUENCIES = [
-  { value: 2, label: "Every 2 weeks" },
-  { value: 4, label: "Every 4 weeks", badge: "Most popular" },
-  { value: 8, label: "Every 8 weeks" },
+  {
+    value: MONTHLY_CLEANING_FREQUENCY_WEEKS,
+    label: "Every 4 weeks",
+    badge: "Monthly",
+  },
 ] as const;
 
 export const COLLECTION_DAYS = [

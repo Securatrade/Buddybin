@@ -30,15 +30,10 @@ describe("pricing", () => {
     expect(total.bins[1].priceCategory).toBe("additional_bin");
   });
 
-  it("handles multiple cleaning frequencies", () => {
-    const total = calculatePlanTotal(
-      [
-        bin({ cleaningFrequencyWeeks: 2 }),
-        bin({ binType: "garden_waste", cleaningFrequencyWeeks: 8 }),
-      ],
-      DEFAULT_PRICING_RULES,
-    );
-    expect(total.monthlyTotalPence).toBe(1298);
+  it("keeps fallback pricing monthly-only", () => {
+    expect(
+      DEFAULT_PRICING_RULES.every((rule) => rule.cleaningFrequencyWeeks === 4),
+    ).toBe(true);
   });
 
   it("recalculates on the server without trusting a submitted total", () => {

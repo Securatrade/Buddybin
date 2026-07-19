@@ -33,6 +33,19 @@ describe("signup validation", () => {
     expect(result.success).toBe(true);
   });
 
+  it("rejects non-monthly cleaning frequency", () => {
+    const result = planBinInputSchema.safeParse({
+      clientId: "bin",
+      binType: "general_waste",
+      cleaningFrequencyWeeks: 2,
+      collectionDay: "Tuesday",
+      collectionFrequency: "weekly",
+      nextCollectionDate: "",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("allows valid fortnightly collection details", () => {
     const result = planBinInputSchema.safeParse({
       clientId: "bin",

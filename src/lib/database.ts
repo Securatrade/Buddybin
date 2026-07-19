@@ -1,5 +1,6 @@
 import {
   BIN_TYPES,
+  MONTHLY_CLEANING_FREQUENCY_WEEKS,
   type OperationalStatus,
   type PaymentStatus,
   type SupportTicketStatus,
@@ -50,6 +51,7 @@ export async function getActivePricingRules(): Promise<PricingRule[]> {
     .select("*")
     .eq("is_active", true)
     .in("bin_type", supportedBinTypeValues)
+    .eq("cleaning_frequency_weeks", MONTHLY_CLEANING_FREQUENCY_WEEKS)
     .order("bin_type", { ascending: true })
     .order("cleaning_frequency_weeks", { ascending: true });
 
@@ -70,6 +72,7 @@ export async function getPricingRulesForAdmin() {
     .from("pricing_rules")
     .select("*")
     .in("bin_type", supportedBinTypeValues)
+    .eq("cleaning_frequency_weeks", MONTHLY_CLEANING_FREQUENCY_WEEKS)
     .order("bin_type", { ascending: true })
     .order("cleaning_frequency_weeks", { ascending: true })
     .order("version", { ascending: false });

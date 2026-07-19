@@ -73,7 +73,7 @@ function PricingRuleForm({ rule }: { rule: PricingRule }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-buddy-navy">
-            {BIN_TYPE_LABELS[rule.binType]} every {rule.cleaningFrequencyWeeks} weeks
+            {BIN_TYPE_LABELS[rule.binType]} monthly
           </h2>
           <p className="mt-1 text-sm text-slate-600">
             Current: {formatPence(rule.firstBinPricePence)} first bin,{" "}

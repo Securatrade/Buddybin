@@ -12,6 +12,7 @@ import {
   BIN_LOCATIONS,
   BIN_TYPES,
   COLLECTION_DAYS,
+  MONTHLY_CLEANING_FREQUENCY_WEEKS,
   type BinType,
   type CollectionDay,
 } from "@/lib/constants";
@@ -52,8 +53,6 @@ const blankCustomer: CustomerDetailsInput = {
   accessInstructions: "",
   termsAccepted: false,
 };
-
-const MONTHLY_CLEANING_FREQUENCY_WEEKS = 4 as const;
 
 type GoogleAddressComponent = {
   long_name: string;

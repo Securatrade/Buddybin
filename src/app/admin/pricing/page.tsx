@@ -17,8 +17,9 @@ export default async function AdminPricingPage() {
       <section>
         <h1 className="text-3xl font-black text-buddy-navy">Pricing management</h1>
         <p className="mt-2 max-w-3xl text-slate-600">
-          Saving a change creates replacement Stripe Price objects and a new
-          pricing-rule version. Existing subscriptions are not moved.
+          Manage the monthly, every-4-weeks cleaning price. Saving a change
+          creates replacement Stripe Price objects and a new pricing-rule
+          version. Existing subscriptions are not moved.
         </p>
         <div className="mt-6">
           <PricingEditor rules={rules} />

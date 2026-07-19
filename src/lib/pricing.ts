@@ -1,6 +1,7 @@
 import {
   BIN_TYPE_LABELS,
   BIN_TYPES,
+  MONTHLY_CLEANING_FREQUENCY_WEEKS,
   type BinType,
   type CleaningFrequencyWeeks,
   type CollectionFrequency,
@@ -39,27 +40,21 @@ export type PlanCalculation = {
   bins: PricedPlanBin[];
 };
 
-const defaultPriceMatrix = {
-  2: { first: 999, additional: 599 },
-  4: { first: 699, additional: 399 },
-  8: { first: 449, additional: 299 },
-} as const;
+const defaultMonthlyPrice = { first: 699, additional: 399 } as const;
 
-export const DEFAULT_PRICING_RULES: PricingRule[] = BIN_TYPES.flatMap((bin) =>
-  ([2, 4, 8] as const).map((frequency) => ({
-    id: `development-${bin.value}-${frequency}`,
-    binType: bin.value,
-    cleaningFrequencyWeeks: frequency,
-    firstBinPricePence: defaultPriceMatrix[frequency].first,
-    additionalBinPricePence: defaultPriceMatrix[frequency].additional,
-    stripeProductId: null,
-    stripeFirstBinPriceId: null,
-    stripeAdditionalBinPriceId: null,
-    version: 1,
-    effectiveFrom: "2026-07-17T00:00:00.000Z",
-    isActive: true,
-  })),
-);
+export const DEFAULT_PRICING_RULES: PricingRule[] = BIN_TYPES.map((bin) => ({
+  id: `development-${bin.value}-${MONTHLY_CLEANING_FREQUENCY_WEEKS}`,
+  binType: bin.value,
+  cleaningFrequencyWeeks: MONTHLY_CLEANING_FREQUENCY_WEEKS,
+  firstBinPricePence: defaultMonthlyPrice.first,
+  additionalBinPricePence: defaultMonthlyPrice.additional,
+  stripeProductId: null,
+  stripeFirstBinPriceId: null,
+  stripeAdditionalBinPriceId: null,
+  version: 1,
+  effectiveFrom: "2026-07-17T00:00:00.000Z",
+  isActive: true,
+}));
 
 export function normaliseDuplicateLabels(bins: PlanBinInput[]) {
   const totals = bins.reduce<Record<string, number>>((acc, bin) => {
