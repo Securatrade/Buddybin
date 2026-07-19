@@ -7,10 +7,9 @@ export const BRAND = {
 } as const;
 
 export const BIN_TYPES = [
-  { value: "general_waste", label: "General waste", colour: "#061B2F" },
+  { value: "general_waste", label: "General Waste", colour: "#061B2F" },
   { value: "recycling", label: "Recycling", colour: "#159EE4" },
-  { value: "garden_waste", label: "Garden waste", colour: "#39B929" },
-  { value: "food_waste", label: "Food waste", colour: "#735C3D" },
+  { value: "garden_waste", label: "Garden Waste", colour: "#39B929" },
 ] as const;
 
 export const CLEANING_FREQUENCIES = [
@@ -26,7 +25,6 @@ export const COLLECTION_DAYS = [
   "Thursday",
   "Friday",
   "Saturday",
-  "Sunday",
 ] as const;
 
 export const COLLECTION_FREQUENCIES = [

@@ -90,6 +90,10 @@ export default async function AdminCustomerDetailPage({
             <Detail label="Bin location" value={property?.bin_location} />
             <Detail label="Other location" value={property?.bin_location_other} />
             <Detail label="Access instructions" value={property?.access_instructions} />
+            <Detail
+              label="Different collection days"
+              value={property?.collection_day_notes}
+            />
           </InfoCard>
           <InfoCard title="Selected bins">
             <div className="grid gap-3">

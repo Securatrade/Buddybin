@@ -18,9 +18,6 @@ from (
     ('recycling', 8, 449, 299),
     ('garden_waste', 2, 999, 599),
     ('garden_waste', 4, 699, 399),
-    ('garden_waste', 8, 449, 299),
-    ('food_waste', 2, 999, 599),
-    ('food_waste', 4, 699, 399),
-    ('food_waste', 8, 449, 299)
+    ('garden_waste', 8, 449, 299)
 ) as seed(bin_type, cleaning_frequency_weeks, first_bin_price_pence, additional_bin_price_pence)
 on conflict do nothing;

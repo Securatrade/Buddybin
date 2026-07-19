@@ -17,8 +17,8 @@ describe("signup bin state", () => {
     const second = addPlanBin(first.bins, { ...baseBin, clientId: "two" });
     expect(second.duplicate).toBe(true);
     expect(second.bins.map((bin) => bin.displayLabel)).toEqual([
-      "General waste 1",
-      "General waste 2",
+      "General Waste 1",
+      "General Waste 2",
     ]);
   });
 
@@ -29,6 +29,6 @@ describe("signup bin state", () => {
     }).bins;
     const removed = removePlanBin(withTwo, "two");
     expect(removed).toHaveLength(1);
-    expect(removed[0].displayLabel).toBe("General waste");
+    expect(removed[0].displayLabel).toBe("General Waste");
   });
 });

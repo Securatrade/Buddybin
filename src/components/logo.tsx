@@ -16,7 +16,7 @@ export function Logo({ className }: { className?: string }) {
         width={168}
         height={54}
         priority
-        className="h-11 w-auto"
+        className="h-9 w-auto sm:h-11"
       />
       <span className="sr-only">{BRAND.name}</span>
     </Link>

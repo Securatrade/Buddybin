@@ -1,19 +1,22 @@
+import {
+  BIN_TYPES,
+  type OperationalStatus,
+  type PaymentStatus,
+  type SupportTicketStatus,
+} from "@/lib/constants";
+import { hasSupabaseServiceEnv } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import { DEFAULT_PRICING_RULES, type PlanCalculation, type PricingRule } from "@/lib/pricing";
 import type {
   ContactMessageInput,
   PublicSupportTicketInput,
   SignupInput,
 } from "@/lib/schemas";
-import type {
-  OperationalStatus,
-  PaymentStatus,
-  SupportTicketStatus,
-} from "@/lib/constants";
-import { hasSupabaseServiceEnv } from "@/lib/env";
-import { logger } from "@/lib/logger";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
 type JsonRecord = Record<string, unknown>;
+
+const supportedBinTypeValues = BIN_TYPES.map((bin) => bin.value);
 
 function toPricingRule(row: JsonRecord): PricingRule {
   return {
@@ -46,6 +49,7 @@ export async function getActivePricingRules(): Promise<PricingRule[]> {
     .from("pricing_rules")
     .select("*")
     .eq("is_active", true)
+    .in("bin_type", supportedBinTypeValues)
     .order("bin_type", { ascending: true })
     .order("cleaning_frequency_weeks", { ascending: true });
 
@@ -65,6 +69,7 @@ export async function getPricingRulesForAdmin() {
   const { data, error } = await supabase
     .from("pricing_rules")
     .select("*")
+    .in("bin_type", supportedBinTypeValues)
     .order("bin_type", { ascending: true })
     .order("cleaning_frequency_weeks", { ascending: true })
     .order("version", { ascending: false });
@@ -180,6 +185,7 @@ export async function createPendingSignup(
       bin_location: input.customer.binLocation,
       bin_location_other: input.customer.binLocationOther || null,
       access_instructions: input.customer.accessInstructions || null,
+      collection_day_notes: input.collectionDayNotes || null,
     })
     .select("id")
     .single();

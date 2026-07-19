@@ -1,3 +1,4 @@
+import { ResponsiveImage } from "@/components/site/responsive-image";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteHeader } from "@/components/site/header";
 import { ButtonLink } from "@/components/ui/button";
@@ -8,10 +9,9 @@ export const metadata = {
 };
 
 const sections = [
-  ["Choose your bins", "Select the general waste, recycling, garden waste or food waste bins you want cleaned once a month."],
-  ["Share council collection details", "Tell BuddyBin the collection day and whether each bin is collected weekly or every two weeks."],
-  ["One monthly payment", "BuddyBin calculates the plan securely on the server and starts a Stripe-hosted monthly subscription."],
-  ["Local partner arranged", "BuddyBin arranges the service through an independent local cleaning partner and keeps your account status updated."],
+  ["Enter your address", "Tell us where your bins are kept."],
+  ["Choose your bins", "Pick General Waste, Recycling or Garden Waste."],
+  ["Set up payment", "Pay monthly through secure Stripe Checkout."],
 ] as const;
 
 export default function HowItWorksPage() {
@@ -19,32 +19,47 @@ export default function HowItWorksPage() {
     <>
       <SiteHeader />
       <main className="bg-white">
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-          <div className="max-w-3xl">
-            <p className="font-bold uppercase tracking-[0.18em] text-buddy-green">
-              How it works
-            </p>
-            <h1 className="mt-3 text-4xl font-black text-buddy-navy sm:text-6xl">
-              A simple way to organise recurring bin cleaning.
-            </h1>
-            <p className="mt-5 text-lg leading-8 text-slate-600">
-              {BRAND.legalArrangement}
-            </p>
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+          <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+            <div>
+              <p className="font-bold uppercase tracking-[0.18em] text-buddy-green">
+                How it works
+              </p>
+              <h1 className="mt-3 text-3xl font-black leading-tight text-buddy-navy sm:text-5xl">
+                Monthly bin cleaning, set up in minutes.
+              </h1>
+              <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">
+                {BRAND.legalArrangement}
+              </p>
+              <div className="mt-7 grid gap-3">
+                {sections.map(([title, copy], index) => (
+                  <article
+                    key={title}
+                    className="grid grid-cols-[2.25rem_1fr] gap-3 rounded-lg border border-buddy-border bg-white p-4"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-buddy-green font-black text-white">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <h2 className="font-black text-buddy-navy">{title}</h2>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">{copy}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <ButtonLink href="/#signup" className="mt-7">
+                Sign up
+              </ButtonLink>
+            </div>
+            <ResponsiveImage
+              src="/images/buddybin-how-it-works.webp"
+              alt="A friendly local cleaner professionally washing a wheelie bin"
+              width={1200}
+              height={800}
+              sizes="(min-width: 1024px) 560px, 100vw"
+              className="aspect-[3/2] bg-buddy-pale"
+            />
           </div>
-          <div className="mt-12 grid gap-4 md:grid-cols-2">
-            {sections.map(([title, copy], index) => (
-              <article key={title} className="rounded-2xl border border-buddy-border bg-white p-6 shadow-sm">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-buddy-green font-black text-white">
-                  {index + 1}
-                </div>
-                <h2 className="mt-5 text-2xl font-black text-buddy-navy">{title}</h2>
-                <p className="mt-3 leading-7 text-slate-600">{copy}</p>
-              </article>
-            ))}
-          </div>
-          <ButtonLink href="/#signup" className="mt-10">
-            Get started
-          </ButtonLink>
         </section>
       </main>
       <SiteFooter />

@@ -3,6 +3,7 @@ import { siteUrl } from "@/lib/env";
 
 const publicRoutes = [
   "",
+  "/about",
   "/how-it-works",
   "/for-cleaners",
   "/help",

@@ -1,14 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  CheckCircle2,
-  CreditCard,
-  Edit3,
-  Home,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { Check } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch, type UseFormRegisterReturn } from "react-hook-form";
 import { trackSignupEvent } from "@/components/analytics";
@@ -16,34 +10,30 @@ import { PriceSummary } from "@/components/signup/price-summary";
 import { Button } from "@/components/ui/button";
 import {
   BIN_LOCATIONS,
-  BIN_TYPE_LABELS,
   BIN_TYPES,
   COLLECTION_DAYS,
-  COLLECTION_FREQUENCIES,
   type BinType,
+  type CollectionDay,
 } from "@/lib/constants";
-import { DEFAULT_PRICING_RULES, calculatePlanTotal, collectionSummary } from "@/lib/pricing";
+import {
+  DEFAULT_PRICING_RULES,
+  calculatePlanTotal,
+  collectionSummary,
+} from "@/lib/pricing";
 import {
   addressSchema,
   customerDetailsSchema,
-  planBinInputSchema,
   signupSchema,
   type AddressInput,
   type CustomerDetailsInput,
   type PlanBinInput,
 } from "@/lib/schemas";
-import { addPlanBin, removePlanBin, updatePlanBin } from "@/lib/signup-state";
-import { cn, todayInputValue } from "@/lib/utils";
+import { cn, formatPence } from "@/lib/utils";
 
-const steps = [
-  { title: "Postcode and address", icon: Home },
-  { title: "Choose bins", icon: Plus },
-  { title: "Customer details", icon: CheckCircle2 },
-  { title: "Review and payment", icon: CreditCard },
-] as const;
+const steps = ["Address", "Bins", "Details", "Payment"] as const;
 
 const fieldClass =
-  "mt-2 w-full rounded-2xl border border-buddy-border bg-white px-4 py-3 text-base text-buddy-navy shadow-sm focus:border-buddy-blue focus:outline-none focus:ring-4 focus:ring-buddy-blue/15";
+  "mt-2 w-full rounded-lg border border-buddy-border bg-white px-4 py-3 text-base text-buddy-navy shadow-sm focus:border-buddy-blue focus:outline-none focus:ring-4 focus:ring-buddy-blue/15";
 
 const blankAddress: AddressInput = {
   postcode: "",
@@ -61,7 +51,6 @@ const blankCustomer: CustomerDetailsInput = {
   binLocationOther: "",
   accessInstructions: "",
   termsAccepted: false,
-  arrangementAccepted: false,
 };
 
 const MONTHLY_CLEANING_FREQUENCY_WEEKS = 4 as const;
@@ -181,12 +170,12 @@ function newClientId() {
   return globalThis.crypto?.randomUUID?.() || `bin-${Date.now()}-${Math.random()}`;
 }
 
-function createDraftBin(binType: BinType = "general_waste"): PlanBinInput {
+function createSelectedBin(binType: BinType, collectionDay: CollectionDay): PlanBinInput {
   return {
     clientId: newClientId(),
     binType,
     cleaningFrequencyWeeks: MONTHLY_CLEANING_FREQUENCY_WEEKS,
-    collectionDay: "Tuesday",
+    collectionDay,
     collectionFrequency: "weekly",
     nextCollectionDate: "",
   };
@@ -197,8 +186,9 @@ export function SignupFlow() {
   const [address, setAddress] = useState<AddressInput>(blankAddress);
   const [addressError, setAddressError] = useState<string>("");
   const [bins, setBins] = useState<PlanBinInput[]>([]);
-  const [draftBin, setDraftBin] = useState<PlanBinInput>(createDraftBin());
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [collectionDay, setCollectionDay] = useState<CollectionDay>("Tuesday");
+  const [differentCollectionDays, setDifferentCollectionDays] = useState(false);
+  const [collectionDayNotes, setCollectionDayNotes] = useState("");
   const [binError, setBinError] = useState<string>("");
   const [checkoutError, setCheckoutError] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
@@ -299,6 +289,10 @@ export function SignupFlow() {
     () => calculatePlanTotal(bins, pricingRules),
     [bins, pricingRules],
   );
+  const selectedBinTypes = useMemo(
+    () => new Set(bins.map((bin) => bin.binType)),
+    [bins],
+  );
 
   function updateAddress<K extends keyof AddressInput>(key: K, value: AddressInput[K]) {
     setAddress((current) => ({ ...current, [key]: value }));
@@ -307,7 +301,7 @@ export function SignupFlow() {
   function continueFromAddress() {
     const parsed = addressSchema.safeParse(address);
     if (!parsed.success) {
-      setAddressError("Please enter a valid UK address.");
+      setAddressError("Enter your address and postcode to continue.");
       return;
     }
 
@@ -317,55 +311,33 @@ export function SignupFlow() {
     trackSignupEvent("postcode_completed");
   }
 
-  function saveDraftBin() {
-    const parsed = planBinInputSchema.safeParse({
-      ...draftBin,
-      cleaningFrequencyWeeks: MONTHLY_CLEANING_FREQUENCY_WEEKS,
-    });
-    if (!parsed.success) {
-      setBinError(
-        parsed.error.issues[0]?.message ||
-          "Please check the bin collection details.",
-      );
+  function toggleBin(binType: BinType) {
+    if (selectedBinTypes.has(binType)) {
+      setBins((current) => current.filter((bin) => bin.binType !== binType));
       return;
     }
 
-    const isDuplicate =
-      !editingId && bins.some((bin) => bin.binType === parsed.data.binType);
-    if (
-      isDuplicate &&
-      !window.confirm(
-        `You already added ${BIN_TYPE_LABELS[parsed.data.binType]}. Add another one?`,
-      )
-    ) {
-      return;
-    }
-
-    if (editingId) {
-      setBins((current) => updatePlanBin(current, editingId, parsed.data));
-    } else {
-      const result = addPlanBin(bins, parsed.data);
-      setBins(result.bins);
-      trackSignupEvent(result.duplicate ? "additional_bin_added" : "bin_added");
-    }
-
-    setDraftBin(createDraftBin(parsed.data.binType));
-    setEditingId(null);
+    setBins((current) => [...current, createSelectedBin(binType, collectionDay)]);
     setBinError("");
+    trackSignupEvent("bin_added");
   }
 
-  function editBin(bin: PlanBinInput) {
-    setDraftBin(bin);
-    setEditingId(bin.clientId);
-    setBinError("");
-    setStep(1);
+  function updateCollectionDay(nextDay: CollectionDay) {
+    setCollectionDay(nextDay);
+    setBins((current) =>
+      current.map((bin) => ({
+        ...bin,
+        collectionDay: nextDay,
+      })),
+    );
   }
 
   function continueFromBins() {
     if (bins.length === 0) {
-      setBinError("Add at least one bin to continue.");
+      setBinError("Choose at least one bin to continue.");
       return;
     }
+
     setBinError("");
     setStep(2);
   }
@@ -384,6 +356,7 @@ export function SignupFlow() {
       address,
       bins,
       customer: customerForm.getValues(),
+      collectionDayNotes: differentCollectionDays ? collectionDayNotes : "",
     });
 
     if (!parsed.success) {
@@ -417,57 +390,30 @@ export function SignupFlow() {
   }
 
   return (
-    <section id="signup" ref={signupRef} className="bg-white py-8 sm:py-10">
+    <section
+      id="signup"
+      ref={signupRef}
+      className={cn(
+        "bg-white pt-4 sm:pt-6",
+        calculation.bins.length > 0 ? "pb-28 sm:pb-12" : "pb-8 sm:pb-10",
+      )}
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl">
-          <p className="font-bold uppercase tracking-[0.18em] text-buddy-green">
-            Get started
-          </p>
-          <h2 className="mt-3 text-3xl font-black text-buddy-navy sm:text-4xl">
-            Sign up for regular wheelie bin cleans
-          </h2>
-          <p className="mt-4 text-lg leading-8 text-slate-600">
-            Tell us your address, choose your bins and pay monthly. Bins are
-            cleaned once a month.
-          </p>
-        </div>
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+          <div className="rounded-lg border border-buddy-border bg-white p-4 shadow-sm sm:p-5 lg:p-6">
+            <ProgressIndicator step={step} />
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="rounded-[28px] border border-buddy-border bg-white p-4 shadow-sm sm:p-6 lg:p-8">
-            <ol className="grid gap-2 sm:grid-cols-4" aria-label="Signup progress">
-              {steps.map((item, index) => {
-                const Icon = item.icon;
-                const active = index === step;
-                const complete = index < step;
-                return (
-                  <li key={item.title}>
-                    <button
-                      type="button"
-                      onClick={() => index < step && setStep(index)}
-                      className={cn(
-                        "flex min-h-16 w-full flex-col items-start justify-center rounded-2xl border px-3 py-2 text-left text-xs font-bold transition",
-                        active
-                          ? "border-buddy-green bg-buddy-pale text-buddy-navy"
-                          : complete
-                            ? "border-buddy-border bg-white text-buddy-navy"
-                            : "border-buddy-border bg-slate-50 text-slate-500",
-                      )}
-                      aria-current={active ? "step" : undefined}
-                    >
-                      <Icon size={18} aria-hidden />
-                      <span className="mt-2">{item.title}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
-
-            <div className="mt-8">
+            <div className="mt-6">
               {step === 0 ? (
-                <div className="space-y-5">
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-2xl font-black text-buddy-navy">
+                      Enter your address
+                    </h2>
+                  </div>
                   <div>
                     <label className="font-bold text-buddy-navy" htmlFor="addressLine1">
-                      Address line 1
+                      Address
                     </label>
                     <input
                       id="addressLine1"
@@ -493,217 +439,149 @@ export function SignupFlow() {
                     />
                   </div>
                   {addressError ? (
-                    <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                    <p className="rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
                       {addressError}
                     </p>
                   ) : null}
-                  <Button type="button" onClick={continueFromAddress}>
+                  <Button type="button" size="lg" className="w-full" onClick={continueFromAddress}>
                     Continue
                   </Button>
                 </div>
               ) : null}
 
               {step === 1 ? (
-                <div className="space-y-6">
+                <div className="space-y-5">
                   <div>
-                    <h3 className="text-2xl font-black text-buddy-navy">
-                      Choose and configure a bin
-                    </h3>
+                    <h2 className="text-2xl font-black text-buddy-navy">
+                      Choose your bins
+                    </h2>
                     <p className="mt-2 text-slate-600">
-                      Choose the bins you want cleaned monthly and tell us the
-                      council collection schedule.
+                      Choose the bins you&rsquo;d like cleaned each month.
                     </p>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {BIN_TYPES.map((bin) => (
-                      <button
-                        type="button"
-                        key={bin.value}
-                        onClick={() =>
-                          setDraftBin((current) => ({
-                            ...current,
-                            binType: bin.value,
-                          }))
-                        }
-                        className={cn(
-                          "min-h-24 rounded-2xl border p-4 text-left shadow-sm transition focus:outline-none focus:ring-4 focus:ring-buddy-blue/15",
-                          draftBin.binType === bin.value
-                            ? "border-buddy-green bg-buddy-pale"
-                            : "border-buddy-border bg-white hover:border-buddy-blue",
-                        )}
-                      >
-                        <span
-                          className="mb-3 block h-8 w-8 rounded-lg"
-                          style={{ backgroundColor: bin.colour }}
-                          aria-hidden
-                        />
-                        <span className="font-bold text-buddy-navy">{bin.label}</span>
-                      </button>
-                    ))}
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {BIN_TYPES.map((bin) => {
+                      const selected = selectedBinTypes.has(bin.value);
+                      return (
+                        <button
+                          type="button"
+                          key={bin.value}
+                          onClick={() => toggleBin(bin.value)}
+                          className={cn(
+                            "flex min-h-24 items-center gap-3 rounded-lg border p-4 text-left shadow-sm transition focus:outline-none focus:ring-4 focus:ring-buddy-blue/15",
+                            selected
+                              ? "border-buddy-green bg-buddy-pale"
+                              : "border-buddy-border bg-white hover:border-buddy-blue",
+                          )}
+                          aria-pressed={selected}
+                        >
+                          <span
+                            className={cn(
+                              "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border",
+                              selected
+                                ? "border-buddy-green bg-buddy-green text-white"
+                                : "border-buddy-border bg-white",
+                            )}
+                            aria-hidden
+                          >
+                            {selected ? <Check size={16} /> : null}
+                          </span>
+                          <span>
+                            <span
+                              className="mb-2 block h-3 w-9 rounded-full"
+                              style={{ backgroundColor: bin.colour }}
+                              aria-hidden
+                            />
+                            <span className="font-bold text-buddy-navy">{bin.label}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
 
-                  <p className="rounded-2xl bg-buddy-pale px-4 py-3 text-sm font-bold text-buddy-navy">
-                    Every bin is cleaned once a month.
-                  </p>
+                  <div>
+                    <label className="font-bold text-buddy-navy" htmlFor="collectionDay">
+                      When is your bin collection day?
+                    </label>
+                    <select
+                      id="collectionDay"
+                      className={fieldClass}
+                      value={collectionDay}
+                      onChange={(event) =>
+                        updateCollectionDay(event.target.value as CollectionDay)
+                      }
+                    >
+                      {COLLECTION_DAYS.map((day) => (
+                        <option key={day}>{day}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <div>
-                      <label className="font-bold text-buddy-navy" htmlFor="collectionDay">
-                        Council collection day
-                      </label>
-                      <select
-                        id="collectionDay"
-                        className={fieldClass}
-                        value={draftBin.collectionDay}
-                        onChange={(event) =>
-                          setDraftBin((current) => ({
-                            ...current,
-                            collectionDay: event.target.value as PlanBinInput["collectionDay"],
-                          }))
-                        }
-                      >
-                        {COLLECTION_DAYS.map((day) => (
-                          <option key={day}>{day}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <label className="flex items-center gap-3 rounded-lg border border-buddy-border bg-white p-4 text-sm font-bold text-buddy-navy">
+                    <input
+                      type="checkbox"
+                      checked={differentCollectionDays}
+                      onChange={(event) =>
+                        setDifferentCollectionDays(event.target.checked)
+                      }
+                      className="h-5 w-5 rounded border-buddy-border text-buddy-green focus:ring-buddy-green"
+                    />
+                    <span>My bins are emptied on different days</span>
+                  </label>
+
+                  {differentCollectionDays ? (
                     <div>
                       <label
                         className="font-bold text-buddy-navy"
-                        htmlFor="collectionFrequency"
+                        htmlFor="collectionDayNotes"
                       >
-                        Council collection frequency
+                        Tell us which bins are emptied on which days (optional)
                       </label>
-                      <select
-                        id="collectionFrequency"
+                      <textarea
+                        id="collectionDayNotes"
+                        rows={3}
                         className={fieldClass}
-                        value={draftBin.collectionFrequency}
-                        onChange={(event) =>
-                          setDraftBin((current) => ({
-                            ...current,
-                            collectionFrequency:
-                              event.target.value as PlanBinInput["collectionFrequency"],
-                            nextCollectionDate:
-                              event.target.value === "every_two_weeks"
-                                ? current.nextCollectionDate || todayInputValue()
-                                : "",
-                          }))
-                        }
-                      >
-                        {COLLECTION_FREQUENCIES.map((frequency) => (
-                          <option key={frequency.value} value={frequency.value}>
-                            {frequency.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {draftBin.collectionFrequency === "every_two_weeks" ? (
-                    <div>
-                      <label
-                        className="font-bold text-buddy-navy"
-                        htmlFor="nextCollectionDate"
-                      >
-                        When is the next collection?
-                      </label>
-                      <input
-                        id="nextCollectionDate"
-                        className={fieldClass}
-                        type="date"
-                        min={todayInputValue()}
-                        value={draftBin.nextCollectionDate || ""}
-                        onChange={(event) =>
-                          setDraftBin((current) => ({
-                            ...current,
-                            nextCollectionDate: event.target.value,
-                          }))
-                        }
+                        placeholder={"General Waste - Monday\nRecycling - Thursday"}
+                        value={collectionDayNotes}
+                        onChange={(event) => setCollectionDayNotes(event.target.value)}
                       />
                     </div>
                   ) : null}
 
+                  {bins.length > 0 ? (
+                    <div className="flex items-center justify-between rounded-lg border border-buddy-border bg-buddy-pale px-4 py-3">
+                      <span className="font-bold text-buddy-navy">Monthly total</span>
+                      <span className="text-xl font-black text-buddy-navy">
+                        {formatPence(calculation.monthlyTotalPence)}
+                      </span>
+                    </div>
+                  ) : null}
+
                   {binError ? (
-                    <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                    <p className="rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
                       {binError}
                     </p>
                   ) : null}
 
-                  <div className="flex flex-wrap gap-3">
-                    <Button type="button" onClick={saveDraftBin}>
-                      {editingId ? "Save bin" : "Add bin"}
-                    </Button>
-                    {editingId ? (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => {
-                          setDraftBin(createDraftBin());
-                          setEditingId(null);
-                        }}
-                      >
-                        Cancel edit
-                      </Button>
-                    ) : null}
-                    <Button type="button" variant="navy" onClick={continueFromBins}>
-                      Continue
-                    </Button>
-                  </div>
-
-                  {bins.length > 0 ? (
-                    <div className="grid gap-3">
-                      {calculation.bins.map((bin) => (
-                        <div
-                          key={bin.clientId}
-                          className="rounded-2xl border border-buddy-border bg-buddy-pale p-4"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <h4 className="font-black text-buddy-navy">
-                                {bin.displayLabel}
-                              </h4>
-                              <p className="mt-1 text-sm text-slate-700">
-                                Cleaned once a month
-                              </p>
-                              <p className="mt-1 text-sm text-slate-700">
-                                {collectionSummary(bin)}
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                aria-label={`Edit ${bin.displayLabel}`}
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-buddy-navy shadow-sm"
-                                onClick={() => editBin(bin)}
-                              >
-                                <Edit3 size={18} aria-hidden />
-                              </button>
-                              <button
-                                type="button"
-                                aria-label={`Remove ${bin.displayLabel}`}
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-red-700 shadow-sm"
-                                onClick={() =>
-                                  setBins((current) => removePlanBin(current, bin.clientId))
-                                }
-                              >
-                                <Trash2 size={18} aria-hidden />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="w-full"
+                    disabled={bins.length === 0}
+                    onClick={continueFromBins}
+                  >
+                    Continue
+                  </Button>
                 </div>
               ) : null}
 
               {step === 2 ? (
-                <form className="space-y-5" onSubmit={continueFromCustomer}>
-                  <h3 className="text-2xl font-black text-buddy-navy">
-                    Customer details
-                  </h3>
-                  <div className="grid gap-5 sm:grid-cols-2">
+                <form className="space-y-4" onSubmit={continueFromCustomer}>
+                  <h2 className="text-2xl font-black text-buddy-navy">
+                    Your details
+                  </h2>
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="font-bold text-buddy-navy" htmlFor="fullName">
                         Full name
@@ -742,10 +620,10 @@ export function SignupFlow() {
                     />
                     <FieldError message={customerForm.formState.errors.mobile?.message} />
                   </div>
-                  <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="font-bold text-buddy-navy" htmlFor="binLocation">
-                        Where are bins normally left?
+                        Where are bins kept?
                       </label>
                       <select
                         id="binLocation"
@@ -782,12 +660,13 @@ export function SignupFlow() {
                       className="font-bold text-buddy-navy"
                       htmlFor="accessInstructions"
                     >
-                      Access instructions optional
+                      Access instructions (optional)
                     </label>
                     <textarea
                       id="accessInstructions"
-                      rows={4}
+                      rows={3}
                       className={fieldClass}
+                      placeholder="Gate code, where the bins are kept, or anything our cleaner should know."
                       {...customerForm.register("accessInstructions")}
                     />
                     <FieldError
@@ -796,33 +675,28 @@ export function SignupFlow() {
                   </div>
                   <ConsentCheckbox
                     id="termsAccepted"
-                    label="I agree to the Terms and Conditions."
                     register={customerForm.register("termsAccepted")}
                     error={customerForm.formState.errors.termsAccepted?.message}
                   />
-                  <ConsentCheckbox
-                    id="arrangementAccepted"
-                    label="I understand that BuddyBin arranges the service through an independent local cleaning partner."
-                    register={customerForm.register("arrangementAccepted")}
-                    error={customerForm.formState.errors.arrangementAccepted?.message}
-                  />
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
                     <Button type="button" variant="secondary" onClick={() => setStep(1)}>
                       Back
                     </Button>
-                    <Button type="submit">Review plan</Button>
+                    <Button type="submit" size="lg">
+                      Review plan
+                    </Button>
                   </div>
                 </form>
               ) : null}
 
               {step === 3 ? (
-                <div className="space-y-6">
-                  <h3 className="text-2xl font-black text-buddy-navy">
-                    Review and payment
-                  </h3>
-                  <div className="rounded-2xl border border-buddy-border bg-buddy-pale p-5">
-                    <h4 className="font-black text-buddy-navy">Address</h4>
-                    <p className="mt-2 text-slate-700">
+                <div className="space-y-5">
+                  <h2 className="text-2xl font-black text-buddy-navy">
+                    Review and pay
+                  </h2>
+                  <div className="rounded-lg border border-buddy-border bg-buddy-pale p-4">
+                    <h3 className="font-black text-buddy-navy">Address</h3>
+                    <p className="mt-1 text-slate-700">
                       {address.addressLine1}, {address.postcode}
                     </p>
                   </div>
@@ -830,7 +704,7 @@ export function SignupFlow() {
                     {calculation.bins.map((bin) => (
                       <div
                         key={bin.clientId}
-                        className="rounded-2xl border border-buddy-border bg-white p-4"
+                        className="rounded-lg border border-buddy-border bg-white p-4"
                       >
                         <p className="font-black text-buddy-navy">{bin.displayLabel}</p>
                         <p className="mt-1 text-sm text-slate-700">
@@ -842,20 +716,29 @@ export function SignupFlow() {
                       </div>
                     ))}
                   </div>
-                  <p className="rounded-2xl bg-buddy-pale px-4 py-3 text-sm font-semibold text-buddy-navy">
-                    Prices are recalculated securely on the server before Stripe
-                    Checkout starts.
+                  {differentCollectionDays && collectionDayNotes.trim() ? (
+                    <div className="rounded-lg border border-buddy-border bg-buddy-pale p-4">
+                      <h3 className="font-black text-buddy-navy">
+                        Different collection days
+                      </h3>
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">
+                        {collectionDayNotes.trim()}
+                      </p>
+                    </div>
+                  ) : null}
+                  <p className="rounded-lg bg-buddy-pale px-4 py-3 text-sm font-semibold text-buddy-navy">
+                    Your price is securely checked before Stripe Checkout.
                   </p>
                   {checkoutError ? (
-                    <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                    <p className="rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
                       {checkoutError}
                     </p>
                   ) : null}
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
                     <Button type="button" variant="secondary" onClick={() => setStep(2)}>
                       Back
                     </Button>
-                    <Button type="button" disabled={submitting} onClick={startCheckout}>
+                    <Button type="button" size="lg" disabled={submitting} onClick={startCheckout}>
                       {submitting ? "Starting Checkout..." : "Continue to payment"}
                     </Button>
                   </div>
@@ -864,10 +747,56 @@ export function SignupFlow() {
             </div>
           </div>
 
-          <PriceSummary calculation={calculation} showMobile={showMobilePrice} />
+          <PriceSummary
+            calculation={calculation}
+            showMobile={showMobilePrice && step > 1}
+          />
         </div>
       </div>
     </section>
+  );
+}
+
+function ProgressIndicator({ step }: { step: number }) {
+  return (
+    <ol className="flex items-start" aria-label="Signup progress">
+      {steps.map((label, index) => {
+        const active = index === step;
+        const complete = index < step;
+        return (
+          <li key={label} className="relative flex flex-1 flex-col items-center text-center">
+            {index < steps.length - 1 ? (
+              <span
+                className={cn(
+                  "absolute left-1/2 right-[-50%] top-4 h-px",
+                  complete ? "bg-buddy-green" : "bg-buddy-border",
+                )}
+                aria-hidden
+              />
+            ) : null}
+            <span
+              className={cn(
+                "relative z-10 flex h-8 w-8 items-center justify-center rounded-full border text-sm font-black",
+                active || complete
+                  ? "border-buddy-green bg-buddy-green text-white"
+                  : "border-buddy-border bg-white text-slate-500",
+              )}
+              aria-current={active ? "step" : undefined}
+            >
+              {complete ? <Check size={16} aria-hidden /> : index + 1}
+            </span>
+            <span
+              className={cn(
+                "mt-2 text-[11px] font-bold leading-tight sm:text-xs",
+                active || complete ? "text-buddy-navy" : "text-slate-500",
+              )}
+            >
+              {label}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -881,29 +810,31 @@ function FieldError({ message }: { message?: string }) {
 
 function ConsentCheckbox({
   id,
-  label,
   register,
   error,
 }: {
   id: string;
-  label: string;
   register: UseFormRegisterReturn;
   error?: string;
 }) {
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="flex items-start gap-3 rounded-2xl border border-buddy-border bg-white p-4 text-sm font-semibold text-buddy-navy"
-      >
-        <input
-          id={id}
-          type="checkbox"
-          className="mt-1 h-5 w-5 rounded border-buddy-border text-buddy-green focus:ring-buddy-green"
-          {...register}
-        />
-        <span>{label}</span>
-      </label>
+      <div className="rounded-lg border border-buddy-border bg-white p-4">
+        <div className="flex items-start gap-3">
+          <input
+            id={id}
+            type="checkbox"
+            className="mt-0.5 h-5 w-5 rounded border-buddy-border text-buddy-green focus:ring-buddy-green"
+            {...register}
+          />
+          <label htmlFor={id} className="text-sm font-semibold text-buddy-navy">
+            I agree to the{" "}
+            <Link href="/terms" className="text-buddy-blue underline-offset-4 hover:underline">
+              Terms &amp; Conditions
+            </Link>
+          </label>
+        </div>
+      </div>
       <FieldError message={error} />
     </div>
   );

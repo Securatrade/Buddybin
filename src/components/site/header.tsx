@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/how-it-works", label: "How it works" },
-  { href: "/for-cleaners", label: "For cleaners" },
+  { href: "/about", label: "About" },
   { href: "/contact", label: "Support" },
   { href: "/login", label: "Log in" },
 ];
@@ -28,7 +28,7 @@ export function SiteHeader() {
             </Link>
           ))}
           <ButtonLink href="/#signup" size="sm">
-            Get started
+            Sign up
           </ButtonLink>
         </nav>
         <button
@@ -59,7 +59,7 @@ export function SiteHeader() {
             </Link>
           ))}
           <ButtonLink href="/#signup" className="mt-2" onClick={() => setOpen(false)}>
-            Get started
+            Sign up
           </ButtonLink>
         </nav>
       </div>

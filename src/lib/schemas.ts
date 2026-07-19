@@ -108,10 +108,6 @@ export const customerDetailsSchema = z
     termsAccepted: z.boolean().refine(Boolean, {
       message: "You must agree to the Terms and Conditions",
     }),
-    arrangementAccepted: z.boolean().refine(Boolean, {
-      message:
-        "You must confirm that BuddyBin arranges the service through an independent local cleaning partner",
-    }),
   })
   .superRefine((details, context) => {
     if (
@@ -130,6 +126,7 @@ export const signupSchema = z.object({
   address: addressSchema,
   bins: z.array(planBinInputSchema).min(1, "Add at least one bin"),
   customer: customerDetailsSchema,
+  collectionDayNotes: z.string().trim().max(800).optional().or(z.literal("")),
 });
 
 export const contactMessageSchema = z.object({

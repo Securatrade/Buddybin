@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("customer starts signup, adds a bin, sees price and reaches mocked checkout", async ({ page }) => {
+test("customer starts signup, selects a bin, sees price and reaches mocked checkout", async ({ page }) => {
   await page.route("**/api/checkout", async (route) => {
     await route.fulfill({
       status: 200,
@@ -13,25 +13,18 @@ test("customer starts signup, adds a bin, sees price and reaches mocked checkout
 
   await page.goto("/#signup");
 
+  await page.getByLabel("Address").fill("10 Downing Street");
   await page.getByLabel("Postcode").fill("SW1A 1AA");
-  await page.getByLabel("Address line 1").fill("10 Downing Street");
-  await page.getByLabel("Town or city").fill("London");
   await page.getByRole("button", { name: "Continue" }).click();
 
-  await page.getByRole("button", { name: "Add bin" }).click();
+  await page.getByRole("button", { name: /General Waste/ }).click();
   await expect(page.locator("aside").getByText("£6.99").first()).toBeVisible();
-  await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("button", { name: "Continue" }).click();
 
   await page.getByLabel("Full name").fill("Test Customer");
   await page.getByLabel("Email address").fill("test@example.com");
   await page.getByLabel("Mobile number").fill("07123 456 789");
-  await page.getByLabel("I agree to the Terms and Conditions.").check();
-  await page
-    .getByLabel(
-      "I understand that BuddyBin arranges the service through an independent local cleaning partner.",
-    )
-    .check();
+  await page.getByLabel(/I agree to the Terms/).check();
   await page.getByRole("button", { name: "Review plan" }).click();
 
   await page.getByRole("button", { name: "Continue to payment" }).click();

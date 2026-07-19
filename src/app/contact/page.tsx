@@ -14,18 +14,16 @@ export default function ContactPage() {
     <>
       <SiteHeader />
       <main className="bg-buddy-pale">
-        <section className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
+        <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 sm:py-12 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
           <div>
             <p className="font-bold uppercase tracking-[0.18em] text-buddy-green">
               Support
             </p>
-            <h1 className="mt-3 text-4xl font-black text-buddy-navy sm:text-5xl">
-              Contact BuddyBin support
+            <h1 className="mt-3 text-3xl font-black text-buddy-navy sm:text-5xl">
+              Contact support
             </h1>
-            <p className="mt-5 text-lg leading-8 text-slate-700">
-              Need help with your BuddyBin subscription or have a question?
-              Create a support ticket and our team will review your enquiry. We
-              aim to reply by email or telephone within 24 hours.
+            <p className="mt-4 text-base leading-7 text-slate-700 sm:text-lg">
+              Create a support ticket and our team will review your enquiry.
             </p>
             <p className="mt-5 font-bold text-buddy-navy">
               Email:{" "}
@@ -34,7 +32,7 @@ export default function ContactPage() {
               </a>
             </p>
           </div>
-          <div className="rounded-[28px] border border-buddy-border bg-white p-5 shadow-sm sm:p-7">
+          <div className="rounded-lg border border-buddy-border bg-white p-5 shadow-sm sm:p-6">
             <h2 className="text-2xl font-black text-buddy-navy">
               Create a support ticket
             </h2>

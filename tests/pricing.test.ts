@@ -43,7 +43,7 @@ describe("pricing", () => {
 
   it("recalculates on the server without trusting a submitted total", () => {
     const browserSubmittedTotal = 1;
-    const total = calculatePlanTotal([bin(), bin({ binType: "food_waste" })], DEFAULT_PRICING_RULES);
+    const total = calculatePlanTotal([bin(), bin({ binType: "garden_waste" })], DEFAULT_PRICING_RULES);
     expect(total.monthlyTotalPence).not.toBe(browserSubmittedTotal);
     expect(total.monthlyTotalPence).toBe(1098);
   });
